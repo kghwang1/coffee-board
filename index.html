@@ -209,8 +209,8 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   </div>
 
   <div class="card">
-    <h2>브랜드별 분기 호수</h2>
-    <p class="sub">분기마다 상가정보 파일에서 센 매장 수를 적으면 직전 분기 대비 증감이 함께 표시됩니다.</p>
+    <h2>브랜드별 분기 호수 <span style="font-weight:500;font-size:13px;color:var(--muted)">(순천·여수·광양 자료)</span></h2>
+    <p class="sub">세 도시 합계입니다. 분기마다 상가정보 파일에서 센 매장 수를 적으면 직전 분기 대비 증감이 함께 표시됩니다.</p>
     <div class="logbar">
       <input type="text" id="qName" placeholder="2026-3" style="width:110px;font-family:var(--mono)">
       <button class="btn" id="qAdd">분기 추가</button>
@@ -220,6 +220,18 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
     </div>
     <div class="scroller"><table id="tblQ"></table></div>
     <p class="src">증감은 직전 분기와의 차이입니다 · 빈칸은 아직 세지 않은 분기</p>
+  </div>
+
+  <div class="gapnote">
+    <h3>이 지역 순위는 전국과 다릅니다</h3>
+    <p>2026년 2분기 기준 세 도시 합계 193곳입니다. 전국 순위는 메가MGC 3,325 · 컴포즈 2,649 · 빽다방 1,712 · 더벤티 1,230 순인데, 여기서는 순서가 뒤집힙니다.</p>
+    <ol>
+      <li><strong>더벤티가 1위입니다.</strong> 전국 4위 브랜드가 이 지역에서는 메가MGC를 앞섭니다. 여수에만 32곳이 몰려 있습니다.</li>
+      <li><strong>컴포즈는 절반도 못 채웠습니다.</strong> 전국에서는 더벤티의 두 배가 넘는데 여기서는 26곳뿐입니다. 부산에서 출발한 두 브랜드가 남해안에서 정반대 결과를 냈습니다.</li>
+      <li>빈자리가 있는 쪽은 오히려 컴포즈입니다. 다만 영업지역이 150m로 가장 좁아 신규 출점 여지가 실제로 얼마나 되는지는 지도에서 확인하셔야 합니다.</li>
+      <li><strong>더벤티는 이미 촘촘한 데다 전국 폐업률이 5.53%로 상위권 중 가장 높습니다.</strong> 이 지역에 가장 많은 브랜드가 전국에서 가장 많이 문을 닫는 브랜드라는 조합은 다음 분기 자료로 반드시 확인해 보세요.</li>
+      <li>하삼동 2곳, 우지 2곳, 매머드 1곳은 사실상 미진출 상태입니다. 경쟁은 적지만 지역 인지도도 없다는 뜻입니다.</li>
+    </ol>
   </div>
 
   <div class="card">
@@ -642,7 +654,11 @@ document.querySelector('nav').addEventListener('click',function(e){
 
 /* ── 브랜드별 분기 호수 ── */
 var QTRS = ['2026-1','2026-2'];
-var QDATA = {};
+var QDATA = {
+  venti:{'2026-2':55}, mega:{'2026-2':52}, compose:{'2026-2':26},
+  hio:{'2026-2':24},   paik:{'2026-2':22}, ten:{'2026-2':9},
+  hasam:{'2026-2':2},  wooji:{'2026-2':2}, mammoth:{'2026-2':1}
+};
 
 function qRender(){
   var head = '<thead><tr><th>브랜드</th>'+QTRS.map(function(q){
@@ -749,7 +765,7 @@ function monthTable(){
    배포 후 아래 두 줄만 본인 값으로 바꾸면 자동 저장이 켜집니다.
    API 를 빈 문자열로 두면 파일 저장·불러오기만 동작합니다. */
 var API   = 'https://coffee-board.kghwang1.workers.dev';   /* 예: 'https://coffee-board.kghwang1.workers.dev' */
-var TOKEN = 'kg2026coffeeboard7x4m';   /* ← 여기에 WRITE_TOKEN 값을 따옴표 안에 넣으세요 */
+var TOKEN = '';   /* ← 여기에 WRITE_TOKEN 값을 따옴표 안에 넣으세요 */
 
 var badge = document.getElementById('syncBadge');
 function setBadge(txt, cls){ badge.textContent = txt; badge.className = 'sync' + (cls?' '+cls:''); }
@@ -784,6 +800,7 @@ function pullAll(){
     var ok = false;
     if(res[0] && typeof res[0].log === 'object' && res[0].log){ LOG = res[0].log; logRender(); ok = true; }
     if(res[1] && Array.isArray(res[1].qtrs)){ QTRS = res[1].qtrs; QDATA = res[1].data || {}; qRender(); ok = true; }
+    else { saveQ(); }
     setBadge(ok ? '불러옴' : '저장된 기록 없음', ok ? 'on' : '');
   }).catch(function(){ setBadge('연결 실패', 'err'); });
 }
