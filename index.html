@@ -96,9 +96,9 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   <button role="tab" data-tab="overview" aria-selected="true">개요</button>
   <button role="tab" data-tab="compare" aria-selected="false">비교</button>
   <button role="tab" data-tab="open" aria-selected="false">개업</button>
+  <button role="tab" data-tab="store" aria-selected="false">매장</button>
   <button role="tab" data-tab="tool" aria-selected="false">견적도구</button>
   <button role="tab" data-tab="etc" aria-selected="false">기타</button>
-  <button role="tab" data-tab="log" aria-selected="false">기록</button>
 </nav>
 
 <section id="overview">
@@ -150,6 +150,9 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
     <p class="src">단위 만원 · 기준 평수가 브랜드마다 달라 그대로 비교하면 안 됩니다</p>
   </div>
 
+</section>
+
+<section id="store" hidden>
   <div class="card">
     <h2>폐업률 · 2024년</h2>
     <p class="sub">(계약종료 + 계약해지) ÷ 전년 가맹점 수. 커피 업종 전체 평균은 11.97%라 아홉 곳 모두 평균보다 한참 낮습니다.</p>
@@ -190,6 +193,44 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
       <li><strong>각 사 홈페이지 매장 찾기</strong>에서 신규 매장 목록과 오픈일을 수집합니다. 대부분 오픈 예정점을 따로 표시합니다.</li>
       <li>수집한 오픈일을 월별로 집계하면 이 차트를 채울 수 있습니다.</li>
       <li>일반적으로 카페 개점은 <strong>봄과 초여름에 몰리고 한겨울에 줄어드는</strong> 경향이 있지만, 브랜드별로 확인된 수치는 아닙니다.</li>
+    </ol>
+  </div>
+
+<div class="card">
+    <h2>누적 호수 기록</h2>
+    <p class="sub">본사 홈페이지에 표시되는 누적 오픈 호수를 날짜와 함께 적어 두면, 구간별 개점 수와 월 환산값이 자동으로 계산됩니다. 메가MGC커피는 홈페이지 우측 상단에 날짜와 함께 표시됩니다.</p>
+
+    <div class="logbar">
+      <select id="logBrand" aria-label="브랜드 선택"></select>
+      <input type="date" id="logDate" aria-label="날짜">
+      <input type="number" id="logCount" placeholder="누적 호수" min="0" step="1" aria-label="누적 호수">
+      <button class="btn solid" id="logAdd">추가</button>
+    </div>
+
+    <div class="scroller"><table id="tblLog"></table></div>
+    <p class="logempty" id="logEmpty">기록이 없습니다. 날짜와 누적 호수를 넣어 보세요.</p>
+
+    <div class="logbar" style="margin-top:14px">
+      <button class="btn" id="logSave">파일로 저장</button>
+      <button class="btn" id="logLoad">불러오기</button>
+      <input type="file" id="logFile" accept="application/json" style="display:none">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>구간별 월 환산 개점 수</h2>
+    <p class="sub">구간 개점 수를 30.44일 기준으로 환산한 값입니다. 구간이 짧을수록 값이 튀니 2주 이상 간격으로 기록하세요.</p>
+    <div class="chartbox" id="chLog"></div>
+    <p class="src">단위 개/월 · 직접 기록한 값에서 계산됩니다</p>
+  </div>
+
+  <div class="gapnote">
+    <h3>기록하는 요령</h3>
+    <ol>
+      <li><strong>같은 요일, 같은 주기</strong>로 적으세요. 매달 1일처럼 고정하면 구간 길이가 일정해져 비교가 쉬워집니다.</li>
+      <li>누적 호수는 <strong>폐업한 매장을 빼지 않은 숫자</strong>입니다. 실제 순증가는 이보다 적습니다.</li>
+      <li>브라우저를 닫으면 입력값이 사라집니다. <strong>파일로 저장</strong>을 눌러 JSON을 보관하시고, 다음에 열 때 불러오기로 이어가세요.</li>
+      <li>반년쯤 쌓이면 계절 흐름이 보입니다. 개점이 몰리는 달은 본사가 출점에 힘을 싣는 시기이자, 내 상권에 경쟁점이 들어올 확률이 높은 시기입니다.</li>
     </ol>
   </div>
 </section>
@@ -238,45 +279,6 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   </div>
 </section>
 
-<section id="log" hidden>
-  <div class="card">
-    <h2>누적 호수 기록</h2>
-    <p class="sub">본사 홈페이지에 표시되는 누적 오픈 호수를 날짜와 함께 적어 두면, 구간별 개점 수와 월 환산값이 자동으로 계산됩니다. 메가MGC커피는 홈페이지 우측 상단에 날짜와 함께 표시됩니다.</p>
-
-    <div class="logbar">
-      <select id="logBrand" aria-label="브랜드 선택"></select>
-      <input type="date" id="logDate" aria-label="날짜">
-      <input type="number" id="logCount" placeholder="누적 호수" min="0" step="1" aria-label="누적 호수">
-      <button class="btn solid" id="logAdd">추가</button>
-    </div>
-
-    <div class="scroller"><table id="tblLog"></table></div>
-    <p class="logempty" id="logEmpty">기록이 없습니다. 날짜와 누적 호수를 넣어 보세요.</p>
-
-    <div class="logbar" style="margin-top:14px">
-      <button class="btn" id="logSave">파일로 저장</button>
-      <button class="btn" id="logLoad">불러오기</button>
-      <input type="file" id="logFile" accept="application/json" style="display:none">
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>구간별 월 환산 개점 수</h2>
-    <p class="sub">구간 개점 수를 30.44일 기준으로 환산한 값입니다. 구간이 짧을수록 값이 튀니 2주 이상 간격으로 기록하세요.</p>
-    <div class="chartbox" id="chLog"></div>
-    <p class="src">단위 개/월 · 직접 기록한 값에서 계산됩니다</p>
-  </div>
-
-  <div class="gapnote">
-    <h3>기록하는 요령</h3>
-    <ol>
-      <li><strong>같은 요일, 같은 주기</strong>로 적으세요. 매달 1일처럼 고정하면 구간 길이가 일정해져 비교가 쉬워집니다.</li>
-      <li>누적 호수는 <strong>폐업한 매장을 빼지 않은 숫자</strong>입니다. 실제 순증가는 이보다 적습니다.</li>
-      <li>브라우저를 닫으면 입력값이 사라집니다. <strong>파일로 저장</strong>을 눌러 JSON을 보관하시고, 다음에 열 때 불러오기로 이어가세요.</li>
-      <li>반년쯤 쌓이면 계절 흐름이 보입니다. 개점이 몰리는 달은 본사가 출점에 힘을 싣는 시기이자, 내 상권에 경쟁점이 들어올 확률이 높은 시기입니다.</li>
-    </ol>
-  </div>
-</section>
 
 <footer>확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
 </div>
@@ -587,7 +589,7 @@ logFile.addEventListener('change',function(){
   fr.readAsText(f);
 });
 
-var panes=['overview','compare','open','tool','etc','log'];
+var panes=['overview','compare','open','store','tool','etc'];
 document.querySelector('nav').addEventListener('click',function(e){
   var btn=e.target.closest('button[data-tab]'); if(!btn) return;
   var t=btn.getAttribute('data-tab');
