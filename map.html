@@ -108,6 +108,18 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:22px;fon
 </div>
 
 <div class="card">
+  <h2>상가정보 CSV 변환기</h2>
+  <p class="sub">공공데이터포털에서 받은 원본 파일을 그대로 넣으면 순천·광양·여수의 저가커피 매장만 골라냅니다.</p>
+  <div class="bar">
+    <button class="btn solid" id="convBtn">원본 CSV 넣기</button>
+    <button class="btn" id="exportBtn" disabled>stores.json 내려받기</button>
+    <input type="file" id="convIn" accept=".csv,text/csv" style="display:none">
+  </div>
+  <p class="hint" id="convMsg">data.go.kr에서 <b>소상공인시장진흥공단_상가(상권)정보</b>를 검색해 전남 CSV를 받으세요. 로그인 없이 받을 수 있습니다. 파일이 커서 PC에서 하시는 편이 안전합니다.</p>
+  <table id="convTbl"></table>
+</div>
+
+<div class="card">
   <h2>지역별 집계</h2>
   <p class="sub">불러온 데이터 기준입니다.</p>
   <table id="tbl"></table>
@@ -116,7 +128,7 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:22px;fon
 <div class="note">
   <h3>매장 좌표를 구하는 법</h3>
   <ol>
-    <li><strong>공공데이터포털 소상공인시장진흥공단 상가(상권)정보</strong>가 가장 확실합니다. <code>data.go.kr</code>에서 검색해 전남 지역 CSV를 받으면 상호명·업종·위도·경도가 다 들어 있습니다. 공공데이터라 내 사이트에 올려 써도 됩니다.</li>
+    <li><strong>공공데이터포털 소상공인시장진흥공단 상가(상권)정보</strong>가 가장 확실합니다. <code>data.go.kr</code>에서 검색해 전남 지역 CSV를 받으면 상호명·업종·위도·경도가 다 들어 있습니다. 공공데이터라 내 사이트에 올려 써도 됩니다. 받은 파일은 위 <strong>상가정보 CSV 변환기</strong>에 그대로 넣으시면 됩니다.</li>
     <li>받은 CSV에서 상호명에 브랜드 이름이 들어간 행만 걸러내면 됩니다. 엑셀 필터로 충분합니다.</li>
     <li>몇 곳만 확인하실 거면 지도 앱에서 매장을 길게 눌러 좌표를 복사해 직접 넣으셔도 됩니다.</li>
     <li>파일은 아래 형식의 JSON이나, <code>brand,name,lat,lng</code> 헤더를 가진 CSV면 그대로 읽습니다.</li>
@@ -353,6 +365,132 @@ fetch('stores.json').then(function(r){ return r.ok ? r.json() : null; }).then(fu
   stores = d.filter(function(s){ return s && s.brand && isFinite(s.lat) && isFinite(s.lng); });
   renderChips(); draw();
 }).catch(function(){});
+
+/* ── 공공데이터 상가정보 CSV → 매장 좌표 ── */
+var BRAND_RULES = [
+  {name:'메가MGC커피', re:/메가\s*(mgc|엠지씨)?\s*커피|메가커피/i},
+  {name:'컴포즈커피',   re:/컴포즈/i},
+  {name:'빽다방',       re:/빽다방/i},
+  {name:'더벤티',       re:/더벤티/i},
+  {name:'텐퍼센트커피', re:/텐퍼센트/i},
+  {name:'매머드커피',   re:/매머드|맘모스커피|mammoth/i},
+  {name:'하삼동커피',   re:/하삼동/i},
+  {name:'하이오커피',   re:/하이오\s*커피|hi[\-\s]?o\s*coffee/i},
+  {name:'우지커피',     re:/우지\s*커피/i}
+];
+var TARGET_GU = ['순천시','광양시','여수시'];
+
+function splitCSVLine(line){
+  var out=[], cur='', q=false;
+  for(var i=0;i<line.length;i++){
+    var ch=line[i];
+    if(q){
+      if(ch==='"'){ if(line[i+1]==='"'){cur+='"';i++;} else q=false; }
+      else cur+=ch;
+    } else if(ch==='"') q=true;
+    else if(ch===','){ out.push(cur); cur=''; }
+    else cur+=ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+function convert(text){
+  text = text.replace(/^\ufeff/,'');
+  var lines = text.split(/\r?\n/);
+  var head = splitCSVLine(lines[0]).map(function(h){ return h.replace(/"/g,'').trim(); });
+  function col(){
+    for(var a=0;a<arguments.length;a++){
+      var i = head.indexOf(arguments[a]);
+      if(i>=0) return i;
+    }
+    return -1;
+  }
+  var iName = col('상호명'), iBr = col('지점명'),
+      iGu   = col('시군구명'), iSi = col('시도명'),
+      iLat  = col('위도'), iLng = col('경도');
+  if(iName<0 || iLat<0 || iLng<0) throw new Error('header');
+
+  var found = [], seen = {};
+  for(var r=1;r<lines.length;r++){
+    var l = lines[r];
+    if(!l) continue;
+    var p = splitCSVLine(l);
+    var gu = iGu>=0 ? p[iGu] : '';
+    if(iGu>=0 && TARGET_GU.indexOf(gu)<0) continue;
+    var nm = (p[iName]||'').replace(/"/g,'').trim();
+    if(!nm) continue;
+    var hit = null;
+    for(var k=0;k<BRAND_RULES.length;k++){
+      if(BRAND_RULES[k].re.test(nm)){ hit = BRAND_RULES[k].name; break; }
+    }
+    if(!hit) continue;
+    var la = parseFloat(p[iLat]), lo = parseFloat(p[iLng]);
+    if(!isFinite(la)||!isFinite(lo)) continue;
+    var key = hit+'|'+la.toFixed(5)+'|'+lo.toFixed(5);
+    if(seen[key]) continue;
+    seen[key] = 1;
+    var branch = (iBr>=0 ? (p[iBr]||'').replace(/"/g,'').trim() : '');
+    found.push({brand:hit, name:(branch || nm), lat:la, lng:lo, gu:gu});
+  }
+  return found;
+}
+
+function convSummary(list){
+  var by = {};
+  list.forEach(function(s){
+    by[s.brand] = by[s.brand] || {순천시:0,광양시:0,여수시:0,t:0};
+    if(by[s.brand][s.gu]!==undefined) by[s.brand][s.gu]++;
+    by[s.brand].t++;
+  });
+  var ks = Object.keys(by).sort(function(a,b){ return by[b].t - by[a].t; });
+  document.getElementById('convTbl').innerHTML =
+    '<thead><tr><th>브랜드</th><th>순천</th><th>광양</th><th>여수</th><th>합계</th></tr></thead><tbody>'+
+    ks.map(function(k){
+      var v = by[k];
+      return '<tr><td>'+esc(k)+'</td><td>'+v['순천시']+'</td><td>'+v['광양시']+'</td><td>'+v['여수시']+'</td><td>'+v.t+'</td></tr>';
+    }).join('')+'</tbody>';
+}
+
+var convIn = document.getElementById('convIn');
+document.getElementById('convBtn').addEventListener('click', function(){ convIn.click(); });
+convIn.addEventListener('change', function(){
+  var f = convIn.files[0]; if(!f) return;
+  document.getElementById('convMsg').textContent = '읽는 중입니다. 파일이 크면 시간이 걸립니다…';
+  var fr = new FileReader();
+  fr.onload = function(){
+    try{
+      var list = convert(String(fr.result));
+      if(!list.length) throw new Error('none');
+      stores = list; on = {};
+      renderChips(); draw(); convSummary(list);
+      document.getElementById('exportBtn').disabled = false;
+      document.getElementById('convMsg').textContent =
+        '매장 '+list.length+'곳을 찾았습니다. 아래 stores.json을 받아 index.html과 같은 폴더에 올리면 다음부터 자동으로 열립니다.';
+      var g = L.featureGroup(list.map(function(s){ return L.marker([s.lat,s.lng]); }));
+      map.fitBounds(g.getBounds().pad(0.1));
+    }catch(err){
+      document.getElementById('convMsg').textContent =
+        (err.message==='none')
+          ? '해당 지역에서 저가커피 브랜드를 찾지 못했습니다. 전남 지역 파일이 맞는지 확인해 주세요.'
+          : '읽을 수 없는 파일입니다. 상호명·시군구명·위도·경도 항목이 있는 원본 CSV를 넣어 주세요.';
+    }
+    convIn.value='';
+  };
+  fr.onerror = function(){
+    document.getElementById('convMsg').textContent = '파일을 읽지 못했습니다. 용량이 크면 PC에서 시도해 보세요.';
+  };
+  fr.readAsText(f, 'utf-8');
+});
+
+document.getElementById('exportBtn').addEventListener('click', function(){
+  var out = stores.map(function(s){ return {brand:s.brand, name:s.name, lat:+s.lat.toFixed(6), lng:+s.lng.toFixed(6)}; });
+  var blob = new Blob([JSON.stringify(out, null, 1)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'stores.json';
+  a.click(); URL.revokeObjectURL(a.href);
+});
 
 renderChips(); draw();
 })();
