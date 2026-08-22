@@ -103,6 +103,18 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
 
 <section id="overview">
   <div class="card"><div id="brandList"></div></div>
+  <div class="card">
+    <h2>매장 데이터 받는 곳</h2>
+    <p class="sub">공공데이터포털 · 소상공인시장진흥공단 상가(상권)정보. 전국 상가업소의 상호명·업종·주소·위경도가 들어 있고, 로그인 없이 받을 수 있습니다.</p>
+    <p style="font-size:14px;margin:0 0 14px">전남 지역 파일을 받아 <a href="map.html" style="color:var(--ink);font-weight:600">매장 밀도 지도</a>의 변환기에 넣으면 순천·광양·여수의 저가커피 매장만 걸러져 지도에 표시됩니다. 분기마다 갱신되니 새 파일이 올라오면 같은 방법으로 바꿔 넣으시면 됩니다.</p>
+    <div class="bar" style="gap:8px">
+      <a class="btn solid" href="https://www.data.go.kr/data/15083033/fileData.do" target="_blank" rel="noopener" style="text-decoration:none">파일데이터 내려받기</a>
+      <a class="btn" href="https://www.data.go.kr/data/15012005/openapi.do" target="_blank" rel="noopener" style="text-decoration:none">오픈 API</a>
+      <a class="btn" href="https://bigdata.sbiz.or.kr/" target="_blank" rel="noopener" style="text-decoration:none">소상공인 365</a>
+    </div>
+    <p class="src">업종 분류는 대분류 10개 · 중분류 75개 · 소분류 247개 체계이며 구분자는 콤마, 인코딩은 UTF-8입니다</p>
+  </div>
+
 </section>
 
 <section id="compare" hidden>
@@ -233,18 +245,6 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
       <li>반년쯤 쌓이면 계절 흐름이 보입니다. 개점이 몰리는 달은 본사가 출점에 힘을 싣는 시기이자, 내 상권에 경쟁점이 들어올 확률이 높은 시기입니다.</li>
     </ol>
   </div>
-  <div class="card">
-    <h2>매장 데이터 받는 곳</h2>
-    <p class="sub">공공데이터포털 · 소상공인시장진흥공단 상가(상권)정보. 전국 상가업소의 상호명·업종·주소·위경도가 들어 있고, 로그인 없이 받을 수 있습니다.</p>
-    <p style="font-size:14px;margin:0 0 14px">전남 지역 파일을 받아 <a href="map.html" style="color:var(--ink);font-weight:600">매장 밀도 지도</a>의 변환기에 넣으면 순천·광양·여수의 저가커피 매장만 걸러져 지도에 표시됩니다. 분기마다 갱신되니 새 파일이 올라오면 같은 방법으로 바꿔 넣으시면 됩니다.</p>
-    <div class="bar" style="gap:8px">
-      <a class="btn solid" href="https://www.data.go.kr/data/15083033/fileData.do" target="_blank" rel="noopener" style="text-decoration:none">파일데이터 내려받기</a>
-      <a class="btn" href="https://www.data.go.kr/data/15012005/openapi.do" target="_blank" rel="noopener" style="text-decoration:none">오픈 API</a>
-      <a class="btn" href="https://bigdata.sbiz.or.kr/" target="_blank" rel="noopener" style="text-decoration:none">소상공인 365</a>
-    </div>
-    <p class="src">업종 분류는 대분류 10개 · 중분류 75개 · 소분류 247개 체계이며 구분자는 콤마, 인코딩은 UTF-8입니다</p>
-  </div>
-
   <div class="card">
     <h2>브랜드 전체 월 결제금액 · 2026년 7월</h2>
     <p class="sub">가맹점당이 아니라 브랜드 전체 합계입니다. 매장 수가 많으면 당연히 큽니다.</p>
