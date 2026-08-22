@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>커피 장비 견적 대조 · 본사 공급가 감사</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E4E7E3;
+  --card:#FAFBF9;
+  --ink:#1B2420;
+  --muted:#6B7772;
+  --line:#CBD2CC;
+  --line-soft:#E0E5DF;
+  --alert:#A32235;
+  --alert-soft:#F2DCE0;
+  --ok:#3A6B4A;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'Pretendard',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.6;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:960px;margin:0 auto;padding:28px 16px 64px}
+
+/* ── header ─────────────────────────────── */
+header{margin-bottom:22px}
+.eyebrow{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:0 0 6px;
+}
+h1{
+  font-size:clamp(22px,5vw,30px);
+  font-weight:800;
+  letter-spacing:-.02em;
+  margin:0 0 8px;
+}
+.lede{margin:0;color:var(--muted);font-size:14px;max-width:52ch}
+
+/* ── verdict ────────────────────────────── */
+.verdict{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:5px;
+  padding:22px 20px;
+  margin:22px 0 18px;
+}
+.verdict-label{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.14em;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+.verdict-num{
+  font-family:var(--mono);
+  font-size:clamp(34px,9vw,52px);
+  font-weight:600;
+  letter-spacing:-.03em;
+  line-height:1.05;
+  margin:4px 0 2px;
+  color:var(--alert);
+}
+.verdict-num.zero{color:var(--muted)}
+.verdict-num.ok{color:var(--ok)}
+.verdict-num .unit{font-size:.45em;font-weight:500;margin-left:4px}
+.verdict-trans{
+  font-size:14px;
+  color:var(--ink);
+  border-top:1px dashed var(--line);
+  margin-top:14px;
+  padding-top:12px;
+}
+.verdict-trans strong{font-family:var(--mono);font-weight:600}
+.profit-row{
+  display:flex;align-items:center;gap:8px;
+  margin-top:10px;font-size:13px;color:var(--muted);
+}
+.profit-row input{width:78px}
+
+/* ── table ──────────────────────────────── */
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:5px;
+  overflow:hidden;
+}
+.panel-head{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:10px;flex-wrap:wrap;
+  padding:14px 16px;border-bottom:1px solid var(--line);
+}
+.panel-head h2{font-size:15px;font-weight:700;margin:0}
+.tools{display:flex;gap:6px;flex-wrap:wrap}
+
+.scroller{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:680px}
+th{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  font-weight:500;
+  text-align:right;
+  padding:10px 8px;
+  border-bottom:1px solid var(--line);
+  white-space:nowrap;
+}
+th:first-child,th:nth-child(2){text-align:left}
+td{
+  padding:6px 8px;
+  border-bottom:1px solid var(--line-soft);
+  vertical-align:middle;
+}
+tr:last-child td{border-bottom:none}
+td.num{text-align:right;font-family:var(--mono);font-size:13px;white-space:nowrap}
+td.gap{font-weight:600}
+td.gap.over{color:var(--alert)}
+td.gap.under{color:var(--ok)}
+
+input,select{
+  font-family:inherit;font-size:14px;color:var(--ink);
+  background:transparent;
+  border:1px solid transparent;
+  border-radius:3px;
+  padding:5px 6px;
+  width:100%;
+}
+input:hover,select:hover{border-color:var(--line)}
+input:focus,select:focus{
+  outline:none;border-color:var(--ink);background:#fff;
+}
+input.n{text-align:right;font-family:var(--mono);font-size:13px}
+input.qty{width:52px;text-align:right;font-family:var(--mono);font-size:13px}
+select{font-size:12px;padding:4px}
+.name-in{min-width:150px}
+
+/* signature: the markup bar */
+.bar-cell{width:104px;padding-right:14px}
+.bar-track{
+  height:7px;background:var(--line-soft);border-radius:2px;overflow:hidden;
+}
+.bar-fill{
+  height:100%;background:var(--alert);border-radius:2px;
+  transition:width .35s cubic-bezier(.2,.7,.3,1);
+}
+.bar-fill.under{background:var(--ok)}
+
+.del{
+  border:none;background:transparent;color:var(--muted);
+  cursor:pointer;font-size:17px;line-height:1;padding:4px 6px;border-radius:3px;
+}
+.del:hover{color:var(--alert);background:var(--alert-soft)}
+
+tfoot td{
+  border-top:2px solid var(--ink);
+  border-bottom:none;
+  padding-top:12px;padding-bottom:14px;
+  font-family:var(--mono);font-size:14px;font-weight:600;text-align:right;
+}
+tfoot td.lbl{
+  font-family:var(--sans);text-align:left;
+  font-size:13px;font-weight:700;letter-spacing:-.01em;
+}
+
+/* ── buttons ────────────────────────────── */
+button.btn{
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:4px;padding:7px 12px;cursor:pointer;
+}
+button.btn:hover{border-color:var(--ink)}
+button.btn.solid{background:var(--ink);color:var(--card);border-color:var(--ink)}
+button.btn.solid:hover{opacity:.86}
+button.btn:focus-visible,.del:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+/* ── notes ──────────────────────────────── */
+.notes{
+  margin-top:18px;background:var(--card);
+  border:1px solid var(--line);border-radius:5px;padding:18px 20px;
+}
+.notes h3{
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);font-weight:500;margin:0 0 12px;
+}
+.tax-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:16px}
+.tax-cell .k{font-size:12px;color:var(--muted);margin-bottom:2px}
+.tax-cell .v{font-family:var(--mono);font-size:17px;font-weight:600}
+.notes ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--muted)}
+.notes li{margin-bottom:6px}
+.notes li strong{color:var(--ink)}
+.empty{padding:36px 16px;text-align:center;color:var(--muted);font-size:14px}
+.io{display:none}
+footer{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">견적서 대조</p>
+  <h1>커피 장비 본사 공급가 감사</h1>
+  <p class="lede"><a href="index.html" style="color:var(--ink);font-weight:600;text-decoration:none;border-bottom:2px solid var(--line)">← 비교 보드</a></p>
+  <p class="lede">장비 항목별로 본사 공급가와 같은 사양의 시중가를 나란히 넣으면, 차액이 어디에 숨어 있는지 한 줄로 드러납니다. 금액 단위는 만원입니다.</p>
+</header>
+
+<section class="verdict" aria-live="polite">
+  <div class="verdict-label">총 차액 · 본사 공급가 − 시중가</div>
+  <div class="verdict-num" id="gapTotal">0<span class="unit">만원</span></div>
+  <div class="verdict-trans" id="trans">항목을 채우면 결과가 나옵니다.</div>
+  <div class="profit-row">
+    <label for="profit">월 영업이익 기준</label>
+    <input id="profit" class="n" type="number" value="270" min="1" step="10">
+    <span>만원</span>
+  </div>
+</section>
+
+<div class="panel">
+  <div class="panel-head">
+    <h2>장비 목록</h2>
+    <div class="tools">
+      <button class="btn" id="addBtn">항목 추가</button>
+      <button class="btn" id="presetBtn">기본 장비 불러오기</button>
+      <button class="btn" id="saveBtn">파일로 저장</button>
+      <button class="btn" id="loadBtn">불러오기</button>
+      <button class="btn" id="clearBtn">전체 비우기</button>
+    </div>
+  </div>
+  <div class="scroller">
+    <table>
+      <thead>
+        <tr>
+          <th>항목</th>
+          <th>구분</th>
+          <th>수량</th>
+          <th>본사 공급가</th>
+          <th>시중가</th>
+          <th>차액</th>
+          <th>마진율</th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot id="tfoot"></tfoot>
+    </table>
+  </div>
+  <div class="empty" id="empty">항목이 없습니다. <strong>기본 장비 불러오기</strong>로 시작해 보세요.</div>
+</div>
+
+<section class="notes">
+  <h3>세금 · 회수</h3>
+  <div class="tax-grid">
+    <div class="tax-cell"><div class="k">본사 공급 기준 총액</div><div class="v" id="taxBase">0만원</div></div>
+    <div class="tax-cell"><div class="k">연 감가상각 (5년 정액)</div><div class="v" id="taxDep">0만원</div></div>
+    <div class="tax-cell"><div class="k">통합투자세액공제 10%</div><div class="v" id="taxCr10">0만원</div></div>
+    <div class="tax-cell"><div class="k">중소기업 17% 적용 시</div><div class="v" id="taxCr17">0만원</div></div>
+  </div>
+  <ul>
+    <li><strong>세금계산서를 반드시 받으세요.</strong> 현금가 할인을 받으면 감가상각도 세액공제도 사라집니다.</li>
+    <li><strong>구분 칸을 먼저 채우세요.</strong> 본사 지정 필수품목은 협상 여지가 거의 없지만, 자율 항목은 외부 시공사·유통사 견적으로 바로 대체할 수 있습니다.</li>
+    <li><strong>공급가는 정보공개서에서 확인합니다.</strong> franchise.ftc.go.kr에서 해당 브랜드 정보공개서를 열람하면 필수품목 목록과 공급 조건이 나옵니다.</li>
+    <li><strong>시중가는 같은 모델명으로 비교합니다.</strong> 사양이 다르면 차액이 아니라 그냥 다른 물건입니다.</li>
+  </ul>
+</section>
+
+<footer>단위 만원 · 부가세 별도 기준으로 입력하세요</footer>
+<input type="file" id="fileIn" class="io" accept="application/json">
+</div>
+
+<script>
+(function(){
+  var PRESET = [
+    {n:'에스프레소 머신 (2그룹)', c:'확인필요', q:1},
+    {n:'그라인더',               c:'확인필요', q:2},
+    {n:'제빙기',                 c:'확인필요', q:1},
+    {n:'정수 시스템 · 필터',      c:'확인필요', q:1},
+    {n:'언더카운터 냉장고',       c:'확인필요', q:1},
+    {n:'냉동고',                 c:'확인필요', q:1},
+    {n:'쇼케이스 냉장고',         c:'확인필요', q:1},
+    {n:'블렌더',                 c:'확인필요', q:2},
+    {n:'온수기',                 c:'확인필요', q:1},
+    {n:'POS · 카드단말기',        c:'확인필요', q:1},
+    {n:'작업대 · 싱크대',         c:'확인필요', q:1},
+    {n:'간판 · 사이니지',         c:'확인필요', q:1}
+  ];
+  var KINDS = ['확인필요','본사 필수','점주 자율'];
+
+  var rows = [];
+  var tbody = document.getElementById('tbody');
+  var tfoot = document.getElementById('tfoot');
+  var empty = document.getElementById('empty');
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function fmt(v){
+    if(!isFinite(v)) return '0';
+    return Math.round(v).toLocaleString('ko-KR');
+  }
+  function blank(){ return {n:'', c:'확인필요', q:1, s:null, m:null}; }
+
+  function render(){
+    empty.style.display = rows.length ? 'none' : 'block';
+
+    var maxGap = 0;
+    rows.forEach(function(r){
+      var g = Math.abs(((r.s||0) - (r.m||0)) * (r.q||0));
+      if(g > maxGap) maxGap = g;
+    });
+
+    tbody.innerHTML = rows.map(function(r,i){
+      var q = r.q || 0;
+      var has = r.s !== null && r.m !== null && r.m > 0;
+      var gap = ((r.s||0) - (r.m||0)) * q;
+      var rate = has ? (((r.s - r.m) / r.m) * 100) : null;
+      var pct = maxGap > 0 ? Math.min(100, Math.abs(gap) / maxGap * 100) : 0;
+      var dir = gap > 0 ? 'over' : (gap < 0 ? 'under' : '');
+
+      var opts = KINDS.map(function(k){
+        return '<option value="'+k+'"'+(r.c===k?' selected':'')+'>'+k+'</option>';
+      }).join('');
+
+      return '<tr>'+
+        '<td><input class="name-in" data-i="'+i+'" data-f="n" value="'+esc(r.n)+'" placeholder="장비명"></td>'+
+        '<td><select data-i="'+i+'" data-f="c">'+opts+'</select></td>'+
+        '<td><input class="qty" type="number" min="0" step="1" data-i="'+i+'" data-f="q" value="'+q+'"></td>'+
+        '<td><input class="n" type="number" min="0" step="1" data-i="'+i+'" data-f="s" value="'+(r.s===null?'':r.s)+'" placeholder="—"></td>'+
+        '<td><input class="n" type="number" min="0" step="1" data-i="'+i+'" data-f="m" value="'+(r.m===null?'':r.m)+'" placeholder="—"></td>'+
+        '<td class="num gap '+dir+'">'+(has ? (gap>0?'+':'')+fmt(gap) : '—')+'</td>'+
+        '<td class="num gap '+dir+'">'+(rate===null?'—':(rate>0?'+':'')+rate.toFixed(0)+'%')+'</td>'+
+        '<td class="bar-cell"><div class="bar-track"><div class="bar-fill'+(gap<0?' under':'')+'" style="width:'+pct+'%"></div></div></td>'+
+        '<td><button class="del" data-del="'+i+'" aria-label="'+esc(r.n||'항목')+' 삭제">×</button></td>'+
+      '</tr>';
+    }).join('');
+
+    var sup = 0, mkt = 0;
+    rows.forEach(function(r){
+      var q = r.q || 0;
+      sup += (r.s || 0) * q;
+      mkt += (r.m || 0) * q;
+    });
+    var gapAll = sup - mkt;
+
+    tfoot.innerHTML = rows.length ? '<tr>'+
+      '<td class="lbl" colspan="3">합계</td>'+
+      '<td>'+fmt(sup)+'</td>'+
+      '<td>'+fmt(mkt)+'</td>'+
+      '<td colspan="4" style="text-align:left;padding-left:8px;color:'+(gapAll>0?'var(--alert)':'var(--ok)')+'">'+
+        (gapAll>0?'+':'')+fmt(gapAll)+'만원</td>'+
+    '</tr>' : '';
+
+    // verdict
+    var el = document.getElementById('gapTotal');
+    el.className = 'verdict-num' + (gapAll === 0 ? ' zero' : (gapAll < 0 ? ' ok' : ''));
+    el.innerHTML = (gapAll>0?'+':'') + fmt(gapAll) + '<span class="unit">만원</span>';
+
+    var profit = parseFloat(document.getElementById('profit').value) || 0;
+    var t = document.getElementById('trans');
+    if(!rows.length || (sup === 0 && mkt === 0)){
+      t.textContent = '항목을 채우면 결과가 나옵니다.';
+    } else if(gapAll > 0 && profit > 0){
+      t.innerHTML = '월 영업이익 '+fmt(profit)+'만원 기준으로 <strong>'+(gapAll/profit).toFixed(1)+'개월치</strong>를 장비값에 더 얹은 셈입니다.';
+    } else if(gapAll < 0){
+      t.textContent = '본사 공급가가 시중가보다 낮습니다. 사양이 같은 모델인지 다시 확인해 보세요.';
+    } else {
+      t.textContent = '차액이 없습니다.';
+    }
+
+    document.getElementById('taxBase').textContent  = fmt(sup)+'만원';
+    document.getElementById('taxDep').textContent   = fmt(sup/5)+'만원';
+    document.getElementById('taxCr10').textContent  = fmt(sup*0.10)+'만원';
+    document.getElementById('taxCr17').textContent  = fmt(sup*0.17)+'만원';
+  }
+
+  function onEdit(e){
+    var t = e.target;
+    var i = t.getAttribute('data-i');
+    if(i === null) return;
+    var f = t.getAttribute('data-f');
+    var r = rows[+i];
+    if(f === 'n' || f === 'c'){
+      r[f] = t.value;
+      if(f === 'c') render();
+      return;
+    }
+    var raw = t.value.trim();
+    if(f === 'q'){ r.q = raw === '' ? 0 : Math.max(0, parseFloat(raw)||0); }
+    else { r[f] = raw === '' ? null : Math.max(0, parseFloat(raw)||0); }
+    render();
+  }
+
+  tbody.addEventListener('input', onEdit);
+  tbody.addEventListener('change', onEdit);
+  tbody.addEventListener('click', function(e){
+    var d = e.target.getAttribute('data-del');
+    if(d === null) return;
+    rows.splice(+d, 1);
+    render();
+  });
+  document.getElementById('profit').addEventListener('input', render);
+
+  document.getElementById('addBtn').addEventListener('click', function(){
+    rows.push(blank());
+    render();
+    var ins = tbody.querySelectorAll('.name-in');
+    if(ins.length) ins[ins.length-1].focus();
+  });
+
+  document.getElementById('presetBtn').addEventListener('click', function(){
+    PRESET.forEach(function(p){ rows.push({n:p.n, c:p.c, q:p.q, s:null, m:null}); });
+    render();
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    if(rows.length && !confirm('모든 항목을 지웁니다. 계속할까요?')) return;
+    rows = [];
+    render();
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', function(){
+    var blob = new Blob([JSON.stringify({v:1, profit:document.getElementById('profit').value, rows:rows}, null, 2)],
+                        {type:'application/json'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'coffee-equipment-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  var fileIn = document.getElementById('fileIn');
+  document.getElementById('loadBtn').addEventListener('click', function(){ fileIn.click(); });
+  fileIn.addEventListener('change', function(){
+    var f = fileIn.files[0];
+    if(!f) return;
+    var fr = new FileReader();
+    fr.onload = function(){
+      try{
+        var d = JSON.parse(fr.result);
+        if(!d || !Array.isArray(d.rows)) throw 0;
+        rows = d.rows.map(function(r){
+          return {
+            n: String(r.n || ''),
+            c: KINDS.indexOf(r.c) >= 0 ? r.c : '확인필요',
+            q: Number(r.q) || 0,
+            s: (r.s === null || r.s === undefined) ? null : Number(r.s),
+            m: (r.m === null || r.m === undefined) ? null : Number(r.m)
+          };
+        });
+        if(d.profit) document.getElementById('profit').value = d.profit;
+        render();
+      }catch(err){
+        alert('이 파일은 읽을 수 없습니다. 이 페이지에서 저장한 JSON 파일을 선택하세요.');
+      }
+      fileIn.value = '';
+    };
+    fr.readAsText(f);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

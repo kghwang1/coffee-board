@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>저가커피 프랜차이즈 비교 보드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDEEF0; --card:#FFFFFF; --ink:#131A22; --muted:#6E7681;
+  --line:#D8DBDF; --soft:#EBEDEF; --warn:#B3341F;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'Pretendard',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+.wrap{max-width:1000px;margin:0 auto;padding:24px 14px 72px}
+h1{font-size:clamp(20px,4.6vw,27px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.lede{margin:0;color:var(--muted);font-size:13.5px;max-width:60ch}
+.toollink{display:inline-block;margin-top:12px;font-size:13px;font-weight:600;color:var(--ink);text-decoration:none;border-bottom:2px solid var(--line);padding-bottom:1px}
+.toollink:hover{border-bottom-color:var(--ink)}
+
+nav{display:flex;gap:4px;margin:20px 0 18px;border-bottom:1px solid var(--line);overflow-x:auto}
+nav button{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;padding:9px 14px;cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+nav button:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px;margin-bottom:16px}
+.card h2{font-size:16px;font-weight:700;margin:0 0 3px;letter-spacing:-.01em}
+.card .sub{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+.src{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:10px;letter-spacing:.02em}
+
+.brand{border-bottom:1px solid var(--soft);padding:15px 0}
+.brand:last-child{border-bottom:none;padding-bottom:0}
+.brand:first-child{padding-top:0}
+.bhead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:7px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;align-self:center}
+.bname{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.bmeta{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.brand p{margin:0 0 8px;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-family:var(--mono);font-size:11px;background:var(--soft);border-radius:3px;padding:3px 7px;color:var(--muted)}
+.chip b{color:var(--ink);font-weight:600}
+
+.chartbox{width:100%;overflow:hidden}
+svg{display:block;width:100%;height:auto;font-family:var(--mono)}
+.legend{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+.lg{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:20px;padding:4px 11px 4px 8px;cursor:pointer;color:var(--ink);font-family:var(--sans)}
+.lg[aria-pressed="false"]{opacity:.34}
+.lg:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.lg i{width:9px;height:9px;border-radius:50%;display:block}
+
+.scroller{overflow-x:auto;margin:0 -18px;padding:0 18px}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:right;padding:8px 7px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child{text-align:left}
+td{padding:8px 7px;border-bottom:1px solid var(--soft);text-align:right;font-family:var(--mono);font-size:13px;white-space:nowrap}
+td:first-child{text-align:left;font-family:var(--sans);font-size:14px;font-weight:600}
+tr:last-child td{border-bottom:none}
+.na{color:var(--muted)}
+
+.gapnote{background:#fff;border:1px dashed var(--line);border-radius:6px;padding:16px 18px;margin-bottom:16px}
+.gapnote h3{font-size:14px;font-weight:700;margin:0 0 7px}
+.gapnote p{margin:0 0 9px;font-size:13.5px;color:var(--muted)}
+.gapnote ol{margin:0;padding-left:19px;font-size:13.5px;color:var(--muted)}
+.gapnote li{margin-bottom:5px}
+.gapnote li strong{color:var(--ink)}
+footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;font-family:var(--mono)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">공정위 정보공개서 기반</p>
+  <h1>저가커피 프랜차이즈 비교 보드</h1>
+  <p class="lede">매장 수 상위 브랜드 9곳 비교. 확인되지 않은 값은 채우지 않고 빈칸으로 둡니다.</p>
+  <a class="toollink" href="equipment.html">장비 견적 대조 도구 열기 →</a>
+</header>
+
+<nav role="tablist">
+  <button role="tab" data-tab="overview" aria-selected="true">개요</button>
+  <button role="tab" data-tab="compare" aria-selected="false">비교</button>
+  <button role="tab" data-tab="open" aria-selected="false">개업</button>
+  <button role="tab" data-tab="etc" aria-selected="false">기타</button>
+</nav>
+
+<section id="overview">
+  <div class="card"><div id="brandList"></div></div>
+</section>
+
+<section id="compare" hidden>
+  <div class="card">
+    <h2>연도별 가맹점 수</h2>
+    <p class="sub">선이 끊긴 구간은 해당 연도 자료가 확인되지 않은 곳입니다. 범례를 눌러 켜고 끌 수 있습니다.</p>
+    <div class="chartbox" id="chStores"></div>
+    <div class="legend" id="lgStores"></div>
+    <p class="src">출처 · 공정위 가맹사업정보제공시스템, 각 사 발표 (2021–2024)</p>
+  </div>
+
+  <div class="card">
+    <h2>가맹점 월평균 매출 · 2024년</h2>
+    <p class="sub">정보공개서는 연 단위로만 공시되어 월별 추이는 만들 수 없습니다. 연 매출액을 12로 나눈 값입니다.</p>
+    <div class="chartbox" id="chSales"></div>
+    <p class="src">단위 만원 · 출처 · 2025년 공시 정보공개서 (2024년 실적)</p>
+  </div>
+
+  <div class="card">
+    <h2>한눈에</h2>
+    <div class="scroller"><table id="tblMain"></table></div>
+    <p class="src">폐업률 = (계약종료 + 계약해지) ÷ 전년 가맹점 수 · 명의변경은 빠져 있습니다</p>
+  </div>
+</section>
+
+<section id="open" hidden>
+  <div class="card">
+    <h2>기준 매장 크기</h2>
+    <p class="sub">본사가 창업비용을 안내할 때 쓰는 기준 평수입니다.</p>
+    <div class="chartbox" id="chSize"></div>
+    <p class="src">단위 평 · 출처 · 각 사 창업 안내 및 정보공개서</p>
+  </div>
+
+  <div class="card">
+    <h2>평당 인테리어 단가</h2>
+    <p class="sub">공개한 브랜드가 둘뿐입니다. 나머지는 견적서를 받아 직접 채우셔야 하는 칸입니다.</p>
+    <div class="chartbox" id="chPerPy"></div>
+    <p class="src">단위 만원/평 · 장비·간판은 제외한 순수 인테리어 단가</p>
+  </div>
+
+  <div class="card">
+    <h2>총 창업비용</h2>
+    <p class="sub">가맹비·교육비·인테리어·장비 합계. 상가 보증금과 임차료는 빠져 있고, 외관·전기증설·철거·소방·냉난방기도 대부분 별도입니다.</p>
+    <div class="chartbox" id="chCost"></div>
+    <p class="src">단위 만원 · 기준 평수가 브랜드마다 달라 그대로 비교하면 안 됩니다</p>
+  </div>
+
+  <div class="card">
+    <h2>연간 신규 개점 수 · 2024년</h2>
+    <p class="sub">월별 개점 자료는 공시되지 않습니다. 연간 합계로 대신합니다.</p>
+    <div class="chartbox" id="chNew"></div>
+    <p class="src">출처 · 2025년 공시 정보공개서 (2024년 실적)</p>
+  </div>
+
+  <div class="gapnote">
+    <h3>월별 개업 매장수는 왜 비어 있나</h3>
+    <p>정보공개서는 연 1회 공시라 월 단위 개점 시점이 담기지 않습니다. 다만 직접 만드실 수는 있습니다.</p>
+    <ol>
+      <li><strong>각 사 홈페이지 매장 찾기</strong>에서 신규 매장 목록과 오픈일을 수집합니다. 대부분 오픈 예정점을 따로 표시합니다.</li>
+      <li>수집한 오픈일을 월별로 집계하면 이 차트를 채울 수 있습니다.</li>
+      <li>일반적으로 카페 개점은 <strong>봄과 초여름에 몰리고 한겨울에 줄어드는</strong> 경향이 있지만, 브랜드별로 확인된 수치는 아닙니다.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="etc" hidden>
+  <div class="card">
+    <h2>브랜드 전체 월 결제금액 · 2026년 7월</h2>
+    <p class="sub">가맹점당이 아니라 브랜드 전체 합계입니다. 매장 수가 많으면 당연히 큽니다.</p>
+    <div class="chartbox" id="chPay"></div>
+    <p class="src">단위 억원 · 출처 · 모바일인덱스 · 나머지 브랜드는 미집계</p>
+  </div>
+
+  <div class="gapnote">
+    <h3>월별 매출 계절성을 보려면</h3>
+    <p>브랜드별 월 매출은 공시 대상이 아닙니다. 대신 이렇게 접근하실 수 있습니다.</p>
+    <ol>
+      <li><strong>모바일인덱스 월 결제금액</strong>을 매달 기록해 시계열로 쌓습니다. 브랜드 전체 수치지만 계절 흐름은 그대로 드러납니다.</li>
+      <li>매장 수로 나누면 <strong>가맹점당 추정 결제액</strong>이 나옵니다. 신규 출점이 많은 브랜드는 이 보정을 반드시 해야 합니다.</li>
+      <li>가장 정확한 건 <strong>인근 기존 점주 면담</strong>입니다. 아이스 비중이 높은 저가커피는 여름과 겨울 매출 차이가 큽니다.</li>
+      <li>참고로 컴포즈커피는 월 결제금액이 2021년 1월 66억원에서 2026년 7월 493억원으로, 메가MGC커피는 2026년 5월 월 1,000억원을 처음 넘었습니다.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>본사 구조와 리스크</h2>
+    <div class="scroller"><table id="tblRisk"></table></div>
+  </div>
+</section>
+
+<footer>확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var YEARS = ['2021','2022','2023','2024'];
+
+var B = [
+  { k:'mega', name:'메가MGC커피', color:'#E8A33D', corp:'앤하우스', since:'2015년 홍대 1호점',
+    stores:[1603,2173,2709,3325], newOpen:657, closeRate:0.39, sales:3237,
+    cost:7800, size:10, perPy:null, royalty:15, pay:968,
+    desc:'저가커피 1위. 2021년 사모펀드 컨소시엄이 약 1,400억원에 인수한 뒤 본사 매출이 878억원(2021)에서 4,959억원(2024)으로 뛰었습니다. 본사 매출의 90% 이상이 가맹점에 넘기는 원부자재 물류 수익입니다.',
+    risk:'2025년 10월 공정위 과징금 22억 9,200만원. 필수품목 강제와 상품권 수수료 전가. 사모펀드 엑시트 사이클도 변수입니다.' },
+
+  { k:'compose', name:'컴포즈커피', color:'#2E7D6E', corp:'졸리비 그룹', since:'2014년 부산 1호점',
+    stores:[1285,1901,2350,2649], newOpen:311, closeRate:1.19, sales:2266,
+    cost:6708, size:10, perPy:null, royalty:null, pay:493,
+    desc:'성장률 1위. 2024년 필리핀 졸리비 그룹이 약 4,700억원에 인수했습니다. 본사 매출은 738억원(2022) → 889억원(2023) → 897억원(2024), 영업이익은 253억 → 367억 → 400억원입니다. 2025년 9월 3,000호점을 넘겼습니다.',
+    risk:'최근 2년 배당 471억원, 2026년 1월 유상감자. 영업이익률이 48%에서 13%로 내려앉았습니다. 평균 영업기간 535일로 가장 짧습니다.' },
+
+  { k:'paik', name:'빽다방', color:'#1D5FA8', corp:'더본코리아', since:'2006년 논현동',
+    stores:[null,1244,1470,1712], newOpen:286, closeRate:1.33, sales:2704,
+    cost:null, size:8, perPy:null, royalty:null, pay:242,
+    desc:'매장당 매출 2위. 2022년부터 가맹비를 받지 않고 8평부터 창업할 수 있습니다. 평균 영업기간 1,142일로 저가커피 중 가장 깁니다.',
+    risk:'가맹점이 2.5배 늘어나는 동안 평당 매출은 2020년 대비 약 200만원 줄었습니다. 더본코리아는 2025년 영업손실 237억원으로 적자 전환. 2026년 6월 BI 전면 리뉴얼 중이라 간판 교체 비용 부담 주체를 서면으로 확인해야 합니다.' },
+
+  { k:'venti', name:'더벤티', color:'#8E4B9E', corp:'(주)더벤티', since:'부산 기반',
+    stores:[null,null,null,1230], newOpen:173, closeRate:5.53, sales:1845,
+    cost:null, size:null, perPy:null, royalty:null, pay:105,
+    desc:'대용량 콘셉트로 자리 잡은 부산 기반 브랜드입니다. 2024년 이후 월 결제금액이 정체 구간에 들어갔습니다.',
+    risk:'폐업률 5.53%로 상위 브랜드 중 가장 높습니다. 커피 업종 평균(11.97%)보다는 낮지만 메가·컴포즈와는 자릿수가 다릅니다.' },
+
+  { k:'ten', name:'텐퍼센트커피', color:'#C0392B', corp:'(주)텐퍼센트커피', since:'2015년 가맹사업',
+    stores:[null,null,null,814], newOpen:206, closeRate:1.69, sales:1839,
+    cost:7930, size:10, perPy:220, royalty:20, pay:null,
+    desc:'매달 10일 반값 행사(텐데이)를 본사가 전액 부담합니다. 인테리어 평당 220만원, 기기·장비 약 3,200만원, 간판 약 550만원으로 내역을 공개하는 편입니다.',
+    risk:'양도양수가 연 100건을 넘어 실질 점주 교체율이 연 10%대입니다. 폐업률 1.69%와 격차가 큽니다. 2026년 4월 점주 SNS 논란으로 불매 여론이 번진 적이 있습니다.' },
+
+  { k:'mammoth', name:'매머드커피', color:'#7A5230', corp:'매머드익스프레스', since:'',
+    stores:[null,null,null,742], newOpen:null, closeRate:4.5, sales:1923,
+    cost:null, size:null, perPy:null, royalty:null, pay:108,
+    desc:'매머드커피랩·매머드익스프레스로 운영합니다. 2024년 본사 매출 757억원, 영업이익 26억원. 가맹점 평당 연매출은 전국 평균 1,842만원인데 최고 3억 2,943만원, 최저 53만원으로 편차가 극심합니다.',
+    risk:'폐업률 4.5%로 더벤티 다음으로 높습니다. 2024년 이후 월 결제금액이 정체 구간이고, 본사 영업이익률도 3% 수준으로 얇습니다.' },
+
+  { k:'hasam', name:'하삼동커피', color:'#C77BA8', corp:'(주)하삼동', since:'부산 기반',
+    stores:[null,null,null,644], newOpen:null, closeRate:2.13, sales:1721,
+    cost:8220, size:10, perPy:297, royalty:10, pay:null,
+    desc:'조용히 규모를 키운 브랜드입니다. 표준창업비용 8,220만원에 가맹비 550만·교육비 550만·보증금 300만원이 포함되고, 로열티는 월 10만원으로 가장 낮습니다. 최근 집계로는 741개까지 늘었습니다.',
+    risk:'평당 인테리어 단가가 297만원으로 텐퍼센트(220만원)보다 35% 높습니다. 가맹점 연매출은 2023년 2억 1,800만원에서 2024년 2억 650만원으로 뒷걸음쳤습니다.' },
+
+  { k:'hio', name:'하이오커피', color:'#5A6472', corp:'(주)하이파이브', since:'2019년 8월 · 부산 구서점',
+    stores:[null,null,249,278], newOpen:null, closeRate:null, sales:1967,
+    cost:7110, size:null, perPy:null, royalty:15, pay:null,
+    desc:'부산에서 출발한 남부권 브랜드입니다. 다회용 리유저블 컵과 앱 오더가 특징이고, 로열티가 월 15만원으로 낮은 편입니다.',
+    risk:'서울에 매장이 없고 5년이 지나도록 300개를 넘기지 못했습니다. 폐업률 수치가 공개 자료에서 확인되지 않습니다. 순천·여수에 이미 매장이 몰려 있어 신규 영업지역 확보가 어려울 수 있습니다.' },
+
+  { k:'wooji', name:'우지커피', color:'#4F7A28', corp:'(주)우지컴퍼니', since:'2019년 송파 1호점',
+    stores:[null,null,null,199], newOpen:102, closeRate:1.49, sales:1914,
+    cost:8403, size:12, perPy:null, royalty:null, pay:null,
+    desc:'스페셜티와 디저트를 얹어 저가와 중가 사이를 노리는 포지션입니다. 2020년 가맹사업을 시작해 500호점을 넘겼습니다.',
+    risk:'재료비율이 37%로 메가·컴포즈(30% 전후)보다 높습니다. 급성장 구간이라 폐업률이 낮게 찍히는 분모 효과가 있어 아직 검증 구간에 들어가지 않았습니다.' }
+];
+
+var on = {}; B.forEach(function(b){ on[b.k] = true; });
+
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function fmt(v){return v===null||v===undefined?'—':Math.round(v).toLocaleString('ko-KR');}
+function nice(max){ if(max<=0) return 1;
+  var p = Math.pow(10, Math.floor(Math.log10(max)));
+  return Math.ceil(max/p*2)/2*p; }
+
+function lineChart(el){
+  var W=760,H=350,L=52,R=14,T=16,Bm=34;
+  var act = B.filter(function(b){return on[b.k];});
+  var max=0;
+  act.forEach(function(b){ b.stores.forEach(function(v){ if(v!==null&&v>max) max=v; }); });
+  max = nice(max||1);
+  var x=function(i){return L+i*(W-L-R)/(YEARS.length-1);};
+  var y=function(v){return T+(1-v/max)*(H-T-Bm);};
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="연도별 가맹점 수 추이">';
+  for(var g=0;g<=4;g++){
+    var gv=max*g/4, gy=y(gv);
+    s+='<line x1="'+L+'" y1="'+gy+'" x2="'+(W-R)+'" y2="'+gy+'" stroke="#EBEDEF"/>'+
+       '<text x="'+(L-9)+'" y="'+(gy+4)+'" text-anchor="end" font-size="11" fill="#6E7681">'+fmt(gv)+'</text>';
+  }
+  YEARS.forEach(function(yr,i){
+    s+='<text x="'+x(i)+'" y="'+(H-12)+'" text-anchor="middle" font-size="11" fill="#6E7681">'+yr+'</text>';
+  });
+  act.forEach(function(b){
+    var seg=[],cur=[];
+    b.stores.forEach(function(v,i){
+      if(v===null){ if(cur.length){seg.push(cur);cur=[];} } else cur.push([x(i),y(v)]);
+    });
+    if(cur.length) seg.push(cur);
+    seg.forEach(function(pts){
+      if(pts.length>1){
+        s+='<polyline fill="none" stroke="'+b.color+'" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="'+
+           pts.map(function(p){return p[0]+','+p[1];}).join(' ')+'"/>';
+      }
+      pts.forEach(function(p){
+        s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.6" fill="#fff" stroke="'+b.color+'" stroke-width="2.2"/>';
+      });
+    });
+    var idx = b.stores.map(function(v,i){return v===null?null:i;}).filter(function(i){return i!==null;}).pop();
+    if(idx!==undefined&&idx!==null){
+      var lx=x(idx), ly=y(b.stores[idx]);
+      var anc = idx===YEARS.length-1?'end':'start';
+      s+='<text x="'+(anc==='end'?lx-7:lx+7)+'" y="'+(ly-9)+'" text-anchor="'+anc+
+         '" font-size="11.5" font-weight="600" fill="'+b.color+'">'+esc(b.name)+'</text>';
+    }
+  });
+  s+='</svg>';
+  el.innerHTML=s;
+}
+
+function barChart(elId, field){
+  var el=document.getElementById(elId);
+  var rows=B.map(function(b){return {n:b.name,v:b[field],c:b.color};});
+  var max=nice(Math.max.apply(null,rows.map(function(r){return r.v||0;}))||1);
+  var rowH=32,W=760,L=112,R=70,H=rows.length*rowH+14;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="브랜드별 막대 비교">';
+  rows.forEach(function(r,i){
+    var cy=i*rowH+20;
+    s+='<text x="'+(L-10)+'" y="'+(cy+4)+'" text-anchor="end" font-size="12.5" font-family="Pretendard,sans-serif" fill="#131A22">'+esc(r.n)+'</text>';
+    s+='<line x1="'+L+'" y1="'+(cy+11)+'" x2="'+(W-R)+'" y2="'+(cy+11)+'" stroke="#EBEDEF"/>';
+    if(r.v===null||r.v===undefined){
+      s+='<text x="'+(L+4)+'" y="'+(cy+4)+'" font-size="11.5" fill="#6E7681">미확인</text>';
+    }else{
+      var w=(r.v/max)*(W-L-R);
+      s+='<rect x="'+L+'" y="'+(cy-8)+'" width="'+w+'" height="16" rx="2" fill="'+r.c+'"/>'+
+         '<text x="'+(L+w+8)+'" y="'+(cy+4)+'" font-size="12" font-weight="600" fill="#131A22">'+fmt(r.v)+'</text>';
+    }
+  });
+  s+='</svg>';
+  el.innerHTML=s;
+}
+
+function legend(){
+  document.getElementById('lgStores').innerHTML=B.map(function(b){
+    return '<button class="lg" data-k="'+b.k+'" aria-pressed="'+(on[b.k]?'true':'false')+'">'+
+      '<i style="background:'+b.color+'"></i>'+esc(b.name)+'</button>';
+  }).join('');
+}
+
+function overview(){
+  document.getElementById('brandList').innerHTML=B.map(function(b){
+    var chips=[
+      ['가맹점', b.stores[3]!==null?fmt(b.stores[3])+'개':'—'],
+      ['월평균매출', b.sales?fmt(b.sales)+'만원':'—'],
+      ['폐업률', b.closeRate!==null?b.closeRate+'%':'—'],
+      ['창업비', b.cost?fmt(b.cost)+'만원':'—'],
+      ['로열티', b.royalty?'월 '+b.royalty+'만원':'—']
+    ].map(function(c){return '<span class="chip">'+c[0]+' <b>'+c[1]+'</b></span>';}).join('');
+    var meta = b.since ? esc(b.corp)+' · '+esc(b.since) : esc(b.corp);
+    return '<article class="brand">'+
+      '<div class="bhead"><span class="dot" style="background:'+b.color+'"></span>'+
+      '<span class="bname">'+esc(b.name)+'</span><span class="bmeta">'+meta+'</span></div>'+
+      '<p>'+esc(b.desc)+'</p>'+
+      '<p style="color:var(--warn)">'+esc(b.risk)+'</p>'+
+      '<div class="chips">'+chips+'</div></article>';
+  }).join('');
+}
+
+function tables(){
+  var head=['브랜드','가맹점','신규개점','폐업률','월매출','창업비','평수','평당인테리어'];
+  document.getElementById('tblMain').innerHTML=
+    '<thead><tr>'+head.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead><tbody>'+
+    B.map(function(b){
+      function c(v){return v===null||v===undefined?'<td class="na">—</td>':'<td>'+fmt(v)+'</td>';}
+      return '<tr><td>'+esc(b.name)+'</td>'+c(b.stores[3])+c(b.newOpen)+
+        (b.closeRate===null?'<td class="na">—</td>':'<td>'+b.closeRate+'%</td>')+
+        c(b.sales)+c(b.cost)+c(b.size)+c(b.perPy)+'</tr>';
+    }).join('')+'</tbody>';
+
+  document.getElementById('tblRisk').innerHTML=
+    '<thead><tr><th>브랜드</th><th style="text-align:left">본사</th><th style="text-align:left">눈여겨볼 점</th></tr></thead><tbody>'+
+    B.map(function(b){
+      return '<tr><td>'+esc(b.name)+'</td>'+
+        '<td style="text-align:left;font-family:var(--sans);font-size:13.5px">'+esc(b.corp)+'</td>'+
+        '<td style="text-align:left;font-family:var(--sans);font-size:13.5px;white-space:normal;min-width:280px">'+esc(b.risk)+'</td></tr>';
+    }).join('')+'</tbody>';
+}
+
+function drawAll(){
+  lineChart(document.getElementById('chStores'));
+  ['chSales:sales','chSize:size','chPerPy:perPy','chCost:cost','chNew:newOpen','chPay:pay'].forEach(function(p){
+    var a=p.split(':'); barChart(a[0],a[1]);
+  });
+}
+
+document.getElementById('lgStores').addEventListener('click',function(e){
+  var btn=e.target.closest('.lg'); if(!btn) return;
+  var k=btn.getAttribute('data-k');
+  on[k]=!on[k];
+  btn.setAttribute('aria-pressed',on[k]?'true':'false');
+  lineChart(document.getElementById('chStores'));
+});
+
+var panes=['overview','compare','open','etc'];
+document.querySelector('nav').addEventListener('click',function(e){
+  var btn=e.target.closest('button[data-tab]'); if(!btn) return;
+  var t=btn.getAttribute('data-tab');
+  document.querySelectorAll('nav button').forEach(function(x){
+    x.setAttribute('aria-selected',x===btn?'true':'false');
+  });
+  panes.forEach(function(p){ document.getElementById(p).hidden=(p!==t); });
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+overview(); legend(); tables(); drawAll();
+})();
+</script>
+</body>
+</html>
