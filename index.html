@@ -89,15 +89,14 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
 <header>
   <p class="eyebrow">공정위 정보공개서 기반</p>
   <h1>저가커피 프랜차이즈 비교 보드</h1>
-  <p class="lede">매장 수 상위 브랜드 9곳 비교. 확인되지 않은 값은 채우지 않고 빈칸으로 둡니다.</p>
-  <a class="toollink" href="equipment.html">장비 견적 대조 도구 →</a>
-  <a class="toollink" href="map.html" style="margin-left:14px">매장 밀도 지도 →</a>
+  <a class="toollink" href="map.html">매장 밀도 지도 →</a>
 </header>
 
 <nav role="tablist">
   <button role="tab" data-tab="overview" aria-selected="true">개요</button>
   <button role="tab" data-tab="compare" aria-selected="false">비교</button>
   <button role="tab" data-tab="open" aria-selected="false">개업</button>
+  <button role="tab" data-tab="tool" aria-selected="false">견적도구</button>
   <button role="tab" data-tab="etc" aria-selected="false">기타</button>
   <button role="tab" data-tab="log" aria-selected="false">기록</button>
 </nav>
@@ -191,6 +190,25 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
       <li><strong>각 사 홈페이지 매장 찾기</strong>에서 신규 매장 목록과 오픈일을 수집합니다. 대부분 오픈 예정점을 따로 표시합니다.</li>
       <li>수집한 오픈일을 월별로 집계하면 이 차트를 채울 수 있습니다.</li>
       <li>일반적으로 카페 개점은 <strong>봄과 초여름에 몰리고 한겨울에 줄어드는</strong> 경향이 있지만, 브랜드별로 확인된 수치는 아닙니다.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="tool" hidden>
+  <div class="card">
+    <h2>장비 견적 대조 도구</h2>
+    <p class="sub">본사 공급가와 시중가를 나란히 넣어 항목별 차액과 마진율을 확인합니다.</p>
+    <p style="font-size:14px;margin:0 0 14px">장비는 인테리어보다 큰 비용이면서 본사 필수품목이 몰리는 구간입니다. 텐퍼센트커피 기준으로 인테리어 2,200만원, 기기·장비 3,200만원입니다. 견적서를 받으시면 항목별로 옮겨 적어 시중가와 맞대 보세요.</p>
+    <a class="btn solid" href="equipment.html" style="display:inline-block;text-decoration:none">견적 대조 도구 열기</a>
+  </div>
+
+  <div class="gapnote">
+    <h3>견적서를 받으실 때</h3>
+    <ol>
+      <li>항목별로 <strong>본사 지정 필수 / 점주 자율</strong> 구분을 표시해 달라고 요청하세요. 자율 항목만 외부 견적을 붙여 비교하면 협상 여지가 드러납니다.</li>
+      <li>평당 단가에는 함정이 있습니다. 전기 증설·수도 배관·환기·간판은 평수와 무관한 고정비라 별도로 붙습니다.</li>
+      <li><strong>세금계산서를 반드시 받으세요.</strong> 현금가 할인을 받으면 5년 감가상각도 통합투자세액공제도 사라집니다.</li>
+      <li>계약 종료 시 간판·시설물 철거 비용 부담 주체를 확인하세요. 건물주에 대한 원상복구 의무와는 별개로 발생합니다.</li>
     </ol>
   </div>
 </section>
@@ -569,7 +587,7 @@ logFile.addEventListener('change',function(){
   fr.readAsText(f);
 });
 
-var panes=['overview','compare','open','etc','log'];
+var panes=['overview','compare','open','tool','etc','log'];
 document.querySelector('nav').addEventListener('click',function(e){
   var btn=e.target.closest('button[data-tab]'); if(!btn) return;
   var t=btn.getAttribute('data-tab');
