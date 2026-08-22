@@ -67,6 +67,17 @@ tr:last-child td{border-bottom:none}
 .gapnote ol{margin:0;padding-left:19px;font-size:13.5px;color:var(--muted)}
 .gapnote li{margin-bottom:5px}
 .gapnote li strong{color:var(--ink)}
+.logbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.logbar select,.logbar input{font-family:var(--sans);font-size:14px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:4px;padding:7px 9px}
+.logbar input[type=number]{width:120px;font-family:var(--mono);text-align:right}
+.logbar select:focus,.logbar input:focus{outline:none;border-color:var(--ink)}
+button.btn{font-family:var(--sans);font-size:13px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:4px;padding:7px 12px;cursor:pointer}
+button.btn:hover{border-color:var(--ink)}
+button.btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.logempty{font-size:13.5px;color:var(--muted);padding:14px 0 0;margin:0}
+.del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:17px;line-height:1;padding:2px 6px;border-radius:3px}
+.del:hover{color:var(--warn)}
 footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;font-family:var(--mono)}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -79,7 +90,8 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   <p class="eyebrow">공정위 정보공개서 기반</p>
   <h1>저가커피 프랜차이즈 비교 보드</h1>
   <p class="lede">매장 수 상위 브랜드 9곳 비교. 확인되지 않은 값은 채우지 않고 빈칸으로 둡니다.</p>
-  <a class="toollink" href="equipment.html">장비 견적 대조 도구 열기 →</a>
+  <a class="toollink" href="equipment.html">장비 견적 대조 도구 →</a>
+  <a class="toollink" href="map.html" style="margin-left:14px">매장 밀도 지도 →</a>
 </header>
 
 <nav role="tablist">
@@ -87,6 +99,7 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   <button role="tab" data-tab="compare" aria-selected="false">비교</button>
   <button role="tab" data-tab="open" aria-selected="false">개업</button>
   <button role="tab" data-tab="etc" aria-selected="false">기타</button>
+  <button role="tab" data-tab="log" aria-selected="false">기록</button>
 </nav>
 
 <section id="overview">
@@ -207,6 +220,46 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   </div>
 </section>
 
+<section id="log" hidden>
+  <div class="card">
+    <h2>누적 호수 기록</h2>
+    <p class="sub">본사 홈페이지에 표시되는 누적 오픈 호수를 날짜와 함께 적어 두면, 구간별 개점 수와 월 환산값이 자동으로 계산됩니다. 메가MGC커피는 홈페이지 우측 상단에 날짜와 함께 표시됩니다.</p>
+
+    <div class="logbar">
+      <select id="logBrand" aria-label="브랜드 선택"></select>
+      <input type="date" id="logDate" aria-label="날짜">
+      <input type="number" id="logCount" placeholder="누적 호수" min="0" step="1" aria-label="누적 호수">
+      <button class="btn solid" id="logAdd">추가</button>
+    </div>
+
+    <div class="scroller"><table id="tblLog"></table></div>
+    <p class="logempty" id="logEmpty">기록이 없습니다. 날짜와 누적 호수를 넣어 보세요.</p>
+
+    <div class="logbar" style="margin-top:14px">
+      <button class="btn" id="logSave">파일로 저장</button>
+      <button class="btn" id="logLoad">불러오기</button>
+      <input type="file" id="logFile" accept="application/json" style="display:none">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>구간별 월 환산 개점 수</h2>
+    <p class="sub">구간 개점 수를 30.44일 기준으로 환산한 값입니다. 구간이 짧을수록 값이 튀니 2주 이상 간격으로 기록하세요.</p>
+    <div class="chartbox" id="chLog"></div>
+    <p class="src">단위 개/월 · 직접 기록한 값에서 계산됩니다</p>
+  </div>
+
+  <div class="gapnote">
+    <h3>기록하는 요령</h3>
+    <ol>
+      <li><strong>같은 요일, 같은 주기</strong>로 적으세요. 매달 1일처럼 고정하면 구간 길이가 일정해져 비교가 쉬워집니다.</li>
+      <li>누적 호수는 <strong>폐업한 매장을 빼지 않은 숫자</strong>입니다. 실제 순증가는 이보다 적습니다.</li>
+      <li>브라우저를 닫으면 입력값이 사라집니다. <strong>파일로 저장</strong>을 눌러 JSON을 보관하시고, 다음에 열 때 불러오기로 이어가세요.</li>
+      <li>반년쯤 쌓이면 계절 흐름이 보입니다. 개점이 몰리는 달은 본사가 출점에 힘을 싣는 시기이자, 내 상권에 경쟁점이 들어올 확률이 높은 시기입니다.</li>
+    </ol>
+  </div>
+</section>
+
 <footer>확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
 </div>
 
@@ -218,8 +271,8 @@ var YEARS = ['2021','2022','2023','2024'];
 var B = [
   { k:'mega', name:'메가MGC커피', color:'#E8A33D', corp:'앤하우스', since:'2015년 홍대 1호점',
     stores:[1603,2173,2709,3325], newOpen:657, closeRate:0.39, sales:3237,
-    cost:7800, size:10, perPy:null, royalty:15, pay:968,
-    desc:'저가커피 1위. 2021년 사모펀드 컨소시엄이 약 1,400억원에 인수한 뒤 본사 매출이 878억원(2021)에서 4,959억원(2024)으로 뛰었습니다. 본사 매출의 90% 이상이 가맹점에 넘기는 원부자재 물류 수익입니다.',
+    cost:7423, size:10, perPy:null, royalty:15, pay:968,
+    desc:'저가커피 1위. 2021년 사모펀드 컨소시엄이 약 1,400억원에 인수한 뒤 본사 매출이 878억원(2021)에서 4,959억원(2024)으로 뛰었습니다. 본사 매출의 90% 이상이 가맹점에 넘기는 원부자재 물류 수익입니다. 공식 홈페이지 기준 2026년 8월 20일 현재 누적 4,455호가 문을 열었습니다.',
     risk:'2025년 10월 공정위 과징금 22억 9,200만원. 필수품목 강제와 상품권 수수료 전가. 사모펀드 엑시트 사이클도 변수입니다.' },
 
   { k:'compose', name:'컴포즈커피', color:'#2E7D6E', corp:'졸리비 그룹', since:'2014년 부산 1호점',
@@ -416,7 +469,107 @@ document.getElementById('lgStores').addEventListener('click',function(e){
   lineChart(document.getElementById('chStores'));
 });
 
-var panes=['overview','compare','open','etc'];
+/* ── 누적 호수 기록 ── */
+var LOG = { mega:[{d:'2026-08-20', c:4455}] };
+
+var selBrand = document.getElementById('logBrand');
+selBrand.innerHTML = B.map(function(b){
+  return '<option value="'+b.k+'">'+esc(b.name)+'</option>';
+}).join('');
+
+function brandOf(k){ for(var i=0;i<B.length;i++) if(B[i].k===k) return B[i]; return B[0]; }
+
+function logRows(k){
+  var arr = (LOG[k]||[]).slice().sort(function(a,b){ return a.d < b.d ? -1 : 1; });
+  return arr.map(function(e,i){
+    if(i===0) return {d:e.d, c:e.c, days:null, add:null, per:null};
+    var prev = arr[i-1];
+    var days = Math.round((new Date(e.d) - new Date(prev.d))/86400000);
+    var add = e.c - prev.c;
+    return {d:e.d, c:e.c, days:days, add:add,
+            per: days>0 ? add/days*30.44 : null};
+  });
+}
+
+function logRender(){
+  var k = selBrand.value, b = brandOf(k);
+  var rows = logRows(k);
+  document.getElementById('logEmpty').style.display = rows.length ? 'none' : 'block';
+
+  document.getElementById('tblLog').innerHTML = rows.length ?
+    '<thead><tr><th>날짜</th><th>누적 호수</th><th>구간(일)</th><th>구간 개점</th><th>월 환산</th><th></th></tr></thead><tbody>'+
+    rows.map(function(r,i){
+      function cell(v,suf){ return v===null?'<td class="na">—</td>':'<td>'+fmt(v)+(suf||'')+'</td>'; }
+      return '<tr><td style="font-family:var(--mono);font-size:13px;font-weight:400">'+esc(r.d)+'</td>'+
+        '<td>'+fmt(r.c)+'</td>'+cell(r.days)+cell(r.add)+
+        (r.per===null?'<td class="na">—</td>':'<td>'+r.per.toFixed(1)+'</td>')+
+        '<td><button class="del" data-logdel="'+i+'" aria-label="삭제">×</button></td></tr>';
+    }).join('')+'</tbody>' : '';
+
+  var el = document.getElementById('chLog');
+  var pts = rows.filter(function(r){ return r.per!==null; });
+  if(!pts.length){ el.innerHTML = '<p class="logempty">두 번 이상 기록하면 그래프가 그려집니다.</p>'; return; }
+  var max = nice(Math.max.apply(null, pts.map(function(p){return p.per;})));
+  var rowH=32, W=760, L=132, R=70, H=pts.length*rowH+14;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="구간별 월 환산 개점 수">';
+  pts.forEach(function(p,i){
+    var cy=i*rowH+20, w=(p.per/max)*(W-L-R);
+    s+='<text x="'+(L-10)+'" y="'+(cy+4)+'" text-anchor="end" font-size="11.5" fill="#6E7681">'+esc(p.d)+'</text>'+
+       '<line x1="'+L+'" y1="'+(cy+11)+'" x2="'+(W-R)+'" y2="'+(cy+11)+'" stroke="#EBEDEF"/>'+
+       '<rect x="'+L+'" y="'+(cy-8)+'" width="'+Math.max(w,0)+'" height="16" rx="2" fill="'+b.color+'"/>'+
+       '<text x="'+(L+Math.max(w,0)+8)+'" y="'+(cy+4)+'" font-size="12" font-weight="600" fill="#131A22">'+p.per.toFixed(1)+'</text>';
+  });
+  el.innerHTML = s+'</svg>';
+}
+
+selBrand.addEventListener('change', logRender);
+
+document.getElementById('logAdd').addEventListener('click', function(){
+  var k=selBrand.value;
+  var d=document.getElementById('logDate').value;
+  var c=parseFloat(document.getElementById('logCount').value);
+  if(!d || !isFinite(c)){ alert('날짜와 누적 호수를 모두 넣어 주세요.'); return; }
+  if(!LOG[k]) LOG[k]=[];
+  var ex = LOG[k].filter(function(e){return e.d===d;})[0];
+  if(ex) ex.c = c; else LOG[k].push({d:d, c:c});
+  document.getElementById('logCount').value='';
+  logRender();
+});
+
+document.getElementById('tblLog').addEventListener('click', function(e){
+  var i = e.target.getAttribute('data-logdel'); if(i===null) return;
+  var k = selBrand.value;
+  var sorted = (LOG[k]||[]).slice().sort(function(a,b){return a.d<b.d?-1:1;});
+  var target = sorted[+i];
+  LOG[k] = LOG[k].filter(function(x){ return x.d !== target.d; });
+  logRender();
+});
+
+document.getElementById('logSave').addEventListener('click', function(){
+  var blob=new Blob([JSON.stringify({v:1,log:LOG},null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='store-log-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+var logFile=document.getElementById('logFile');
+document.getElementById('logLoad').addEventListener('click',function(){ logFile.click(); });
+logFile.addEventListener('change',function(){
+  var f=logFile.files[0]; if(!f) return;
+  var fr=new FileReader();
+  fr.onload=function(){
+    try{
+      var d=JSON.parse(fr.result);
+      if(!d || typeof d.log!=='object') throw 0;
+      LOG=d.log; logRender();
+    }catch(err){ alert('이 파일은 읽을 수 없습니다. 이 화면에서 저장한 JSON을 선택하세요.'); }
+    logFile.value='';
+  };
+  fr.readAsText(f);
+});
+
+var panes=['overview','compare','open','etc','log'];
 document.querySelector('nav').addEventListener('click',function(e){
   var btn=e.target.closest('button[data-tab]'); if(!btn) return;
   var t=btn.getAttribute('data-tab');
@@ -427,7 +580,7 @@ document.querySelector('nav').addEventListener('click',function(e){
   window.scrollTo({top:0,behavior:'smooth'});
 });
 
-overview(); legend(); tables(); drawAll();
+overview(); legend(); tables(); drawAll(); logRender();
 })();
 </script>
 </body>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>순천·광양·여수 저가커피 매장 밀도</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --bg:#EDEEF0; --card:#FFF; --ink:#131A22; --muted:#6E7681;
+  --line:#D8DBDF; --soft:#EBEDEF; --warn:#B3341F;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'Pretendard',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6}
+.wrap{max-width:1000px;margin:0 auto;padding:24px 14px 64px}
+h1{font-size:clamp(20px,4.6vw,27px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.lede{margin:0;color:var(--muted);font-size:13.5px;max-width:60ch}
+.back{display:inline-block;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--ink);text-decoration:none;border-bottom:2px solid var(--line)}
+.back:hover{border-bottom-color:var(--ink)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin:16px 0}
+.card h2{font-size:16px;font-weight:700;margin:0 0 3px}
+.card .sub{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.btn{font-family:var(--sans);font-size:13px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:4px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--ink)}
+.btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:20px;padding:4px 11px 4px 8px;cursor:pointer;font-family:var(--sans);color:var(--ink)}
+.chip[aria-pressed="false"]{opacity:.34}
+.chip i{width:9px;height:9px;border-radius:50%;display:block}
+label.rad{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+label.rad input{width:74px;font-family:var(--mono);font-size:13px;text-align:right;border:1px solid var(--line);border-radius:4px;padding:6px 8px}
+
+#map{height:min(66vh,560px);border-radius:6px;border:1px solid var(--line);background:#E8EAEC}
+.leaflet-container{font-family:var(--sans)}
+
+.probe{background:#fff;border:1px dashed var(--line);border-radius:6px;padding:14px 16px;margin-top:12px}
+.probe h3{font-size:14px;font-weight:700;margin:0 0 8px}
+.probe .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px}
+.probe .k{font-size:12px;color:var(--muted)}
+.probe .v{font-family:var(--mono);font-size:20px;font-weight:600}
+.probe .v.hot{color:var(--warn)}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+
+table{width:100%;border-collapse:collapse;margin-top:4px}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:right;padding:7px 6px;border-bottom:1px solid var(--line)}
+th:first-child{text-align:left}
+td{padding:7px 6px;border-bottom:1px solid var(--soft);text-align:right;font-family:var(--mono);font-size:13px}
+td:first-child{text-align:left;font-family:var(--sans);font-weight:600;font-size:14px}
+tr:last-child td{border-bottom:none}
+
+.note{background:#fff;border:1px dashed var(--line);border-radius:6px;padding:16px 18px;margin-top:16px}
+.note h3{font-size:14px;font-weight:700;margin:0 0 7px}
+.note ol{margin:0;padding-left:19px;font-size:13.5px;color:var(--muted)}
+.note li{margin-bottom:6px}
+.note li strong{color:var(--ink)}
+.note code{font-family:var(--mono);font-size:12px;background:var(--soft);padding:1px 5px;border-radius:3px;color:var(--ink);word-break:break-all}
+pre{background:var(--soft);border-radius:5px;padding:11px 13px;overflow-x:auto;font-family:var(--mono);font-size:11.5px;margin:8px 0 0;line-height:1.5}
+footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:22px;font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<a class="back" href="index.html">← 비교 보드</a>
+<p class="eyebrow">상권 밀도</p>
+<h1>순천·광양·여수 매장 밀도</h1>
+<p class="lede">매장 좌표를 넣으면 지도에 뿌리고, 후보 자리를 찍으면 반경 안에 경쟁 매장이 몇 개인지 셉니다.</p>
+
+<div class="card">
+  <div class="bar">
+    <button class="btn" data-city="suncheon">순천</button>
+    <button class="btn" data-city="gwangyang">광양</button>
+    <button class="btn" data-city="yeosu">여수</button>
+    <button class="btn solid" id="loadBtn">매장 파일 불러오기</button>
+    <button class="btn" id="sampleBtn">양식 내려받기</button>
+    <input type="file" id="fileIn" accept="application/json,.csv" style="display:none">
+  </div>
+
+  <div class="bar" id="chips"></div>
+
+  <div class="bar">
+    <label class="rad">반경 <input type="number" id="radius" value="250" min="50" max="2000" step="50"> m</label>
+    <button class="btn" id="circleBtn" aria-pressed="false">반경 원 표시</button>
+    <button class="btn" id="clearProbe">후보 지우기</button>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="probe">
+    <h3>후보 자리 진단</h3>
+    <p class="hint" id="probeHint">지도를 누르면 그 지점 기준으로 반경별 매장 수를 셉니다.</p>
+    <div class="grid" id="probeGrid" hidden>
+      <div><div class="k">반경 250m</div><div class="v" id="p250">—</div></div>
+      <div><div class="k">반경 500m</div><div class="v" id="p500">—</div></div>
+      <div><div class="k">반경 1km</div><div class="v" id="p1000">—</div></div>
+      <div><div class="k">가장 가까운 매장</div><div class="v" id="pNear">—</div></div>
+    </div>
+    <p class="hint" id="probeMsg"></p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>지역별 집계</h2>
+  <p class="sub">불러온 데이터 기준입니다.</p>
+  <table id="tbl"></table>
+</div>
+
+<div class="note">
+  <h3>매장 좌표를 구하는 법</h3>
+  <ol>
+    <li><strong>공공데이터포털 소상공인시장진흥공단 상가(상권)정보</strong>가 가장 확실합니다. <code>data.go.kr</code>에서 검색해 전남 지역 CSV를 받으면 상호명·업종·위도·경도가 다 들어 있습니다. 공공데이터라 내 사이트에 올려 써도 됩니다.</li>
+    <li>받은 CSV에서 상호명에 브랜드 이름이 들어간 행만 걸러내면 됩니다. 엑셀 필터로 충분합니다.</li>
+    <li>몇 곳만 확인하실 거면 지도 앱에서 매장을 길게 눌러 좌표를 복사해 직접 넣으셔도 됩니다.</li>
+    <li>파일은 아래 형식의 JSON이나, <code>brand,name,lat,lng</code> 헤더를 가진 CSV면 그대로 읽습니다.</li>
+  </ol>
+<pre>[
+  {"brand":"메가MGC커피","name":"순천중앙점","lat":34.9567,"lng":127.4845},
+  {"brand":"컴포즈커피","name":"순천역점","lat":34.9451,"lng":127.5027}
+]</pre>
+</div>
+
+<div class="note">
+  <h3>반경 숫자의 의미</h3>
+  <ol>
+    <li>본사가 계약서에 적는 영업지역은 <strong>같은 브랜드만</strong> 막습니다. 메가MGC 250m, 컴포즈 150m가 알려진 값이고 나머지는 미공개입니다.</li>
+    <li>경쟁 브랜드는 바로 옆에 들어와도 막을 방법이 없습니다. 그래서 반경 안에 <strong>전체 브랜드가 몇 개인지</strong>가 실제 위험 신호입니다.</li>
+    <li>백화점·마트·역사·병원 같은 특수상권 매장은 영업지역 계산에서 빠지는 경우가 많습니다. 계약 전 반드시 확인하세요.</li>
+  </ol>
+</div>
+
+<footer>지도 © OpenStreetMap 기여자 · 매장 좌표는 직접 준비한 데이터</footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+"use strict";
+
+var CITY = {
+  suncheon:{n:'순천', lat:34.9506, lng:127.4872, z:13, box:[34.86,127.36,35.06,127.62]},
+  gwangyang:{n:'광양', lat:34.9407, lng:127.6959, z:12, box:[34.86,127.52,35.06,127.80]},
+  yeosu:{n:'여수', lat:34.7604, lng:127.6622, z:12, box:[34.68,127.58,34.83,127.78]}
+};
+
+var COLORS = {
+  '메가MGC커피':'#E8A33D','컴포즈커피':'#2E7D6E','빽다방':'#1D5FA8',
+  '더벤티':'#8E4B9E','텐퍼센트커피':'#C0392B','매머드커피':'#7A5230',
+  '하삼동커피':'#C77BA8','하이오커피':'#5A6472','우지커피':'#4F7A28'
+};
+var PALETTE = ['#1F6F8B','#B85C38','#5C6E58','#7D5BA6','#A8763E'];
+
+var stores = [], on = {}, layer = null, circles = null, probe = null, showCircles = false;
+
+var map = L.map('map').setView([CITY.suncheon.lat, CITY.suncheon.lng], CITY.suncheon.z);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
+layer = L.layerGroup().addTo(map);
+circles = L.layerGroup().addTo(map);
+
+function colorOf(b){
+  if(COLORS[b]) return COLORS[b];
+  var keys = Object.keys(COLORS);
+  for(var i=0;i<keys.length;i++) if(b.indexOf(keys[i].slice(0,3))>=0) return COLORS[keys[i]];
+  var h=0; for(var j=0;j<b.length;j++) h=(h*31+b.charCodeAt(j))>>>0;
+  return PALETTE[h % PALETTE.length];
+}
+
+function dist(a1,o1,a2,o2){
+  var R=6371000, r=Math.PI/180;
+  var dLat=(a2-a1)*r, dLng=(o2-o1)*r;
+  var s=Math.sin(dLat/2)*Math.sin(dLat/2)+
+        Math.cos(a1*r)*Math.cos(a2*r)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+function cityOf(s){
+  for(var k in CITY){
+    var b=CITY[k].box;
+    if(s.lat>=b[0]&&s.lat<=b[2]&&s.lng>=b[1]&&s.lng<=b[3]) return k;
+  }
+  return null;
+}
+
+function brands(){
+  var set={}; stores.forEach(function(s){ set[s.brand]=1; });
+  return Object.keys(set).sort();
+}
+
+function renderChips(){
+  document.getElementById('chips').innerHTML = brands().map(function(b){
+    return '<button class="chip" data-b="'+esc(b)+'" aria-pressed="'+(on[b]!==false?'true':'false')+'">'+
+      '<i style="background:'+colorOf(b)+'"></i>'+esc(b)+'</button>';
+  }).join('') || '<span class="hint">불러온 매장이 없습니다.</span>';
+}
+
+function visible(){ return stores.filter(function(s){ return on[s.brand]!==false; }); }
+
+function draw(){
+  layer.clearLayers(); circles.clearLayers();
+  var r = parseFloat(document.getElementById('radius').value)||250;
+  visible().forEach(function(s){
+    var c = colorOf(s.brand);
+    L.circleMarker([s.lat,s.lng],{radius:6,color:'#fff',weight:2,fillColor:c,fillOpacity:1})
+      .bindPopup('<b>'+esc(s.brand)+'</b><br>'+esc(s.name||''))
+      .addTo(layer);
+    if(showCircles){
+      L.circle([s.lat,s.lng],{radius:r,color:c,weight:1,opacity:.5,fillColor:c,fillOpacity:.07}).addTo(circles);
+    }
+  });
+  renderTable();
+  if(probe) runProbe(probe.getLatLng());
+}
+
+function renderTable(){
+  var bs = brands(), ck = Object.keys(CITY);
+  if(!bs.length){ document.getElementById('tbl').innerHTML=''; return; }
+  var head = '<thead><tr><th>브랜드</th>'+ck.map(function(k){return '<th>'+CITY[k].n+'</th>';}).join('')+'<th>기타</th><th>합계</th></tr></thead>';
+  var body = bs.map(function(b){
+    var row = {suncheon:0,gwangyang:0,yeosu:0,etc:0}, tot=0;
+    stores.forEach(function(s){
+      if(s.brand!==b) return;
+      var c=cityOf(s); row[c||'etc']++; tot++;
+    });
+    return '<tr><td>'+esc(b)+'</td>'+ck.map(function(k){return '<td>'+row[k]+'</td>';}).join('')+
+      '<td>'+row.etc+'</td><td>'+tot+'</td></tr>';
+  }).join('');
+  document.getElementById('tbl').innerHTML = head+'<tbody>'+body+'</tbody>';
+}
+
+function runProbe(ll){
+  var vis = visible();
+  var d = vis.map(function(s){ return {s:s, d:dist(ll.lat,ll.lng,s.lat,s.lng)}; })
+             .sort(function(a,b){ return a.d-b.d; });
+  function cnt(m){ return d.filter(function(x){ return x.d<=m; }).length; }
+  document.getElementById('probeGrid').hidden = false;
+  document.getElementById('probeHint').style.display = 'none';
+  var c250=cnt(250), c500=cnt(500), c1000=cnt(1000);
+  document.getElementById('p250').textContent = c250;
+  document.getElementById('p250').className = 'v'+(c250>0?' hot':'');
+  document.getElementById('p500').textContent = c500;
+  document.getElementById('p500').className = 'v'+(c500>=3?' hot':'');
+  document.getElementById('p1000').textContent = c1000;
+  document.getElementById('pNear').textContent = d.length ? Math.round(d[0].d)+'m' : '—';
+
+  var msg = '';
+  if(!d.length) msg = '표시 중인 매장이 없습니다.';
+  else if(c250>0) msg = '반경 250m 안에 '+c250+'곳이 있습니다. 메가MGC 기준 영업지역과 겹치는 거리입니다.';
+  else if(c500>=3) msg = '반경 500m 안에 '+c500+'곳입니다. 도보권 경쟁이 촘촘한 자리입니다.';
+  else msg = '가장 가까운 매장이 '+Math.round(d[0].d)+'m 떨어져 있습니다. ('+esc(d[0].s.brand)+')';
+  document.getElementById('probeMsg').textContent = msg;
+}
+
+map.on('click', function(e){
+  if(probe) map.removeLayer(probe);
+  probe = L.marker(e.latlng,{draggable:true}).addTo(map);
+  probe.on('dragend', function(){ runProbe(probe.getLatLng()); });
+  runProbe(e.latlng);
+});
+
+document.getElementById('clearProbe').addEventListener('click', function(){
+  if(probe){ map.removeLayer(probe); probe=null; }
+  document.getElementById('probeGrid').hidden = true;
+  document.getElementById('probeHint').style.display = '';
+  document.getElementById('probeMsg').textContent = '';
+});
+
+document.querySelectorAll('[data-city]').forEach(function(b){
+  b.addEventListener('click', function(){
+    var c = CITY[b.getAttribute('data-city')];
+    map.setView([c.lat,c.lng], c.z);
+  });
+});
+
+document.getElementById('chips').addEventListener('click', function(e){
+  var b = e.target.closest('.chip'); if(!b) return;
+  var k = b.getAttribute('data-b');
+  on[k] = (on[k]===false);
+  b.setAttribute('aria-pressed', on[k]!==false ? 'true':'false');
+  draw();
+});
+
+document.getElementById('circleBtn').addEventListener('click', function(){
+  showCircles = !showCircles;
+  this.setAttribute('aria-pressed', showCircles?'true':'false');
+  this.classList.toggle('solid', showCircles);
+  draw();
+});
+document.getElementById('radius').addEventListener('input', draw);
+
+function parseCSV(txt){
+  var lines = txt.split(/\r?\n/).filter(function(l){ return l.trim(); });
+  if(!lines.length) return [];
+  var head = lines[0].split(',').map(function(h){ return h.trim().toLowerCase(); });
+  var iB=head.indexOf('brand'), iN=head.indexOf('name'),
+      iLa=head.indexOf('lat'), iLo=head.indexOf('lng');
+  if(iB<0||iLa<0||iLo<0) throw new Error('header');
+  return lines.slice(1).map(function(l){
+    var p = l.split(',');
+    return {brand:(p[iB]||'').trim(), name:(p[iN]||'').trim(),
+            lat:parseFloat(p[iLa]), lng:parseFloat(p[iLo])};
+  }).filter(function(s){ return s.brand && isFinite(s.lat) && isFinite(s.lng); });
+}
+
+var fileIn = document.getElementById('fileIn');
+document.getElementById('loadBtn').addEventListener('click', function(){ fileIn.click(); });
+fileIn.addEventListener('change', function(){
+  var f = fileIn.files[0]; if(!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){
+    try{
+      var t = String(fr.result).trim(), data;
+      data = (t[0]==='[' || t[0]==='{') ? JSON.parse(t) : parseCSV(t);
+      if(!Array.isArray(data)) throw new Error('shape');
+      stores = data.filter(function(s){ return s && s.brand && isFinite(s.lat) && isFinite(s.lng); });
+      if(!stores.length) throw new Error('empty');
+      on = {};
+      renderChips(); draw();
+      var g = L.featureGroup(stores.map(function(s){ return L.marker([s.lat,s.lng]); }));
+      map.fitBounds(g.getBounds().pad(0.1));
+    }catch(err){
+      alert('읽을 수 없는 파일입니다. brand, name, lat, lng 항목을 가진 JSON이나 CSV를 넣어 주세요.');
+    }
+    fileIn.value='';
+  };
+  fr.readAsText(f, 'utf-8');
+});
+
+document.getElementById('sampleBtn').addEventListener('click', function(){
+  var sample = 'brand,name,lat,lng\n메가MGC커피,순천중앙점,34.9567,127.4845\n컴포즈커피,순천역점,34.9451,127.5027\n';
+  var blob = new Blob(['\ufeff'+sample], {type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'stores-template.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+/* 같은 폴더에 stores.json이 있으면 자동으로 읽습니다 */
+fetch('stores.json').then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+  if(!d || !Array.isArray(d)) return;
+  stores = d.filter(function(s){ return s && s.brand && isFinite(s.lat) && isFinite(s.lng); });
+  renderChips(); draw();
+}).catch(function(){});
+
+renderChips(); draw();
+})();
+</script>
+</body>
+</html>
