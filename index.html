@@ -76,6 +76,14 @@ button.btn{font-family:var(--sans);font-size:13px;font-weight:600;border:1px sol
 button.btn:hover{border-color:var(--ink)}
 button.btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
 button.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+td.qcell{padding:4px 6px}
+td.qcell input{width:74px;text-align:right;font-family:var(--mono);font-size:13px;border:1px solid transparent;border-radius:3px;padding:4px 5px;background:transparent;color:var(--ink)}
+td.qcell input:hover{border-color:var(--line)}
+td.qcell input:focus{outline:none;border-color:var(--ink);background:#fff}
+.delta{display:block;font-family:var(--mono);font-size:10.5px;line-height:1.2;margin-top:1px}
+.delta.up{color:var(--warn)}
+.delta.dn{color:#3A6B4A}
+.delta.flat{color:var(--muted)}
 .logempty{font-size:13.5px;color:var(--muted);padding:14px 0 0;margin:0}
 .del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:17px;line-height:1;padding:2px 6px;border-radius:3px}
 .del:hover{color:var(--warn)}
@@ -196,6 +204,20 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   </div>
 
   <div class="card">
+    <h2>브랜드별 분기 호수</h2>
+    <p class="sub">분기마다 상가정보 파일에서 센 매장 수를 적으면 직전 분기 대비 증감이 함께 표시됩니다.</p>
+    <div class="logbar">
+      <input type="text" id="qName" placeholder="2026-3" style="width:110px;font-family:var(--mono)">
+      <button class="btn" id="qAdd">분기 추가</button>
+      <button class="btn" id="qSave">파일로 저장</button>
+      <button class="btn" id="qLoad">불러오기</button>
+      <input type="file" id="qFile" accept="application/json" style="display:none">
+    </div>
+    <div class="scroller"><table id="tblQ"></table></div>
+    <p class="src">증감은 직전 분기와의 차이입니다 · 빈칸은 아직 세지 않은 분기</p>
+  </div>
+
+  <div class="card">
     <h2>누적 호수 기록</h2>
     <p class="sub">본사 홈페이지에 표시되는 누적 오픈 호수를 날짜와 함께 적어 두면, 구간별 개점 수와 월 환산값이 자동으로 계산됩니다. 메가MGC커피는 홈페이지 우측 상단에 날짜와 함께 표시됩니다.</p>
 
@@ -217,10 +239,11 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   </div>
 
   <div class="card">
-    <h2>구간별 월 환산 개점 수</h2>
-    <p class="sub">구간 개점 수를 30.44일 기준으로 환산한 값입니다. 구간이 짧을수록 값이 튀니 2주 이상 간격으로 기록하세요.</p>
+    <h2>월별 개점 수</h2>
+    <p class="sub">누적 호수 기록에서 구간별 개점 수를 30.44일 기준으로 환산한 값입니다. 구간이 짧을수록 값이 튀니 2주 이상 간격으로 기록하세요.</p>
     <div class="chartbox" id="chLog"></div>
-    <p class="src">단위 개/월 · 직접 기록한 값에서 계산됩니다</p>
+    <div class="scroller" style="margin-top:14px"><table id="tblMonth"></table></div>
+    <p class="src">단위 개/월 · 위 브랜드 선택에 따라 바뀝니다 · 구간 끝 날짜가 속한 달에 배정됩니다</p>
   </div>
 
   <div class="gapnote">
@@ -539,7 +562,7 @@ function logRender(){
 
   var el = document.getElementById('chLog');
   var pts = rows.filter(function(r){ return r.per!==null; });
-  if(!pts.length){ el.innerHTML = '<p class="logempty">두 번 이상 기록하면 그래프가 그려집니다.</p>'; return; }
+  if(!pts.length){ el.innerHTML = '<p class="logempty">두 번 이상 기록하면 그래프가 그려집니다.</p>'; monthTable(); return; }
   var max = nice(Math.max.apply(null, pts.map(function(p){return p.per;})));
   var rowH=32, W=760, L=132, R=70, H=pts.length*rowH+14;
   var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="구간별 월 환산 개점 수">';
@@ -551,6 +574,7 @@ function logRender(){
        '<text x="'+(L+Math.max(w,0)+8)+'" y="'+(cy+4)+'" font-size="12" font-weight="600" fill="#131A22">'+p.per.toFixed(1)+'</text>';
   });
   el.innerHTML = s+'</svg>';
+  monthTable();
 }
 
 selBrand.addEventListener('change', logRender);
@@ -611,7 +635,112 @@ document.querySelector('nav').addEventListener('click',function(e){
   window.scrollTo({top:0,behavior:'smooth'});
 });
 
-overview(); legend(); tables(); drawAll(); logRender();
+/* ── 브랜드별 분기 호수 ── */
+var QTRS = ['2026-1','2026-2'];
+var QDATA = {};
+
+function qRender(){
+  var head = '<thead><tr><th>브랜드</th>'+QTRS.map(function(q){
+    return '<th>'+esc(q)+'</th>';
+  }).join('')+'</tr></thead>';
+  var body = B.map(function(b){
+    var cells = QTRS.map(function(q,i){
+      var v = (QDATA[b.k]||{})[q];
+      var d = '';
+      if(i>0 && v!==undefined && v!==null){
+        var pv = (QDATA[b.k]||{})[QTRS[i-1]];
+        if(pv!==undefined && pv!==null){
+          var g = v - pv;
+          var cls = g>0?'up':(g<0?'dn':'flat');
+          d = '<span class="delta '+cls+'">'+(g>0?'+':'')+fmt(g)+'</span>';
+        }
+      }
+      return '<td class="qcell"><input type="number" step="1" min="0" data-k="'+b.k+'" data-q="'+esc(q)+'" value="'+
+             (v===undefined||v===null?'':v)+'" placeholder="—">'+d+'</td>';
+    }).join('');
+    return '<tr><td>'+esc(b.name)+'</td>'+cells+'</tr>';
+  }).join('');
+  document.getElementById('tblQ').innerHTML = head+'<tbody>'+body+'</tbody>';
+}
+
+document.getElementById('tblQ').addEventListener('change', function(e){
+  var t = e.target;
+  if(!t.getAttribute) return;
+  var k = t.getAttribute('data-k'); if(!k) return;
+  var q = t.getAttribute('data-q');
+  var raw = t.value.trim();
+  QDATA[k] = QDATA[k] || {};
+  if(raw==='') delete QDATA[k][q];
+  else QDATA[k][q] = Math.max(0, parseFloat(raw)||0);
+  qRender();
+});
+
+document.getElementById('qAdd').addEventListener('click', function(){
+  var v = document.getElementById('qName').value.trim();
+  if(!/^\d{4}-[1-4]$/.test(v)){ alert('2026-3 형태로 넣어 주세요.'); return; }
+  if(QTRS.indexOf(v)>=0){ alert('이미 있는 분기입니다.'); return; }
+  QTRS.push(v);
+  QTRS.sort();
+  document.getElementById('qName').value='';
+  qRender();
+});
+
+document.getElementById('qSave').addEventListener('click', function(){
+  var blob = new Blob([JSON.stringify({v:1, qtrs:QTRS, data:QDATA}, null, 1)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'quarters-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+var qFile = document.getElementById('qFile');
+document.getElementById('qLoad').addEventListener('click', function(){ qFile.click(); });
+qFile.addEventListener('change', function(){
+  var f = qFile.files[0]; if(!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){
+    try{
+      var d = JSON.parse(fr.result);
+      if(!d || !Array.isArray(d.qtrs) || typeof d.data!=='object') throw 0;
+      QTRS = d.qtrs; QDATA = d.data; qRender();
+    }catch(err){ alert('이 화면에서 저장한 JSON을 선택해 주세요.'); }
+    qFile.value='';
+  };
+  fr.readAsText(f);
+});
+
+/* ── 월별 개점 수 표 ── */
+function monthTable(){
+  var k = selBrand.value, b = brandOf(k);
+  var rows = logRows(k).filter(function(r){ return r.add!==null && r.days>0; });
+  var el = document.getElementById('tblMonth');
+  if(!rows.length){ el.innerHTML = ''; return; }
+
+  var byY = {};
+  rows.forEach(function(r){
+    var y = r.d.slice(0,4), m = parseInt(r.d.slice(5,7),10);
+    byY[y] = byY[y] || {};
+    byY[y][m] = (byY[y][m]||0) + r.add;
+  });
+  var years = Object.keys(byY).sort();
+  var MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12];
+  var head = '<thead><tr><th>'+esc(b.name)+'</th>'+
+    MONTHS.map(function(m){ return '<th>'+m+'</th>'; }).join('')+
+    '<th>합계</th></tr></thead>';
+  var body = years.map(function(y){
+    var t = 0;
+    var tds = MONTHS.map(function(m){
+      var v = byY[y][m];
+      if(v===undefined) return '<td class="na">—</td>';
+      t += v;
+      return '<td>'+fmt(v)+'</td>';
+    }).join('');
+    return '<tr><td>'+esc(y)+'</td>'+tds+'<td>'+fmt(t)+'</td></tr>';
+  }).join('');
+  el.innerHTML = head+'<tbody>'+body+'</tbody>';
+}
+
+overview(); legend(); tables(); drawAll(); logRender(); qRender();
 })();
 </script>
 </body>
