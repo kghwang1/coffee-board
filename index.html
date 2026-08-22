@@ -139,6 +139,32 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   </div>
 
   <div class="card">
+    <h2>폐업률 · 2024년</h2>
+    <p class="sub">(계약종료 + 계약해지) ÷ 전년 가맹점 수. 커피 업종 전체 평균은 11.97%라 아홉 곳 모두 평균보다 한참 낮습니다.</p>
+    <div class="chartbox" id="chClose"></div>
+    <p class="src">단위 % · 출처 · 2025년 공시 정보공개서 (2024년 실적)</p>
+  </div>
+
+  <div class="card">
+    <h2>양도율 · 명의변경 비율</h2>
+    <p class="sub">가맹점 수 대비 연간 명의변경 건수입니다. 폐업률에 잡히지 않는 점주 교체가 여기 들어갑니다.</p>
+    <div class="chartbox" id="chTransfer"></div>
+    <p class="src">단위 % · 대부분 브랜드가 공개하지 않습니다 · 정보공개서 원문에서 직접 확인해야 하는 값</p>
+  </div>
+
+  <div class="gapnote">
+    <h3>폐업률만 보면 안 되는 이유</h3>
+    <p>공정위 폐업률 계산식에는 <strong>양도양수(명의변경)가 빠져 있습니다.</strong> 점주가 못 버티고 가게를 넘겨도 매장은 그대로 남아 있으니 폐업으로 집계되지 않습니다.</p>
+      <ol>
+      <li>텐퍼센트커피는 폐업률이 1.69%인데, 양도양수는 2024년 98건, 2025년 100건을 넘었습니다. <strong>실질 점주 교체율은 연 10%대</strong>로 여섯 배 넘게 차이가 납니다.</li>
+      <li>급성장 브랜드는 계약 만료가 도래한 매장 자체가 적어 분모 효과로 폐업률이 낮게 찍힙니다. 우지커피와 하이오커피가 여기 해당합니다.</li>
+      <li>거꾸로 <strong>평균 영업기간</strong>이 실질 지표에 가깝습니다. 빽다방 1,142일, 메가MGC 888일, 컴포즈 535일 순입니다.</li>
+      <li>정보공개서 제3장에 연도별 <strong>명의변경 건수</strong>가 있습니다. 이 칸을 채우시면 위 차트가 완성됩니다.</li>
+      <li>거칠게 보시려면 점포 중개 사이트의 브랜드별 양도 매물 수를 가맹점 수로 나눠 보세요. 한 사이트 기준으로 메가MGC 399건(약 12%), 컴포즈 312건(약 12%)입니다. 중복·묵은 매물이 섞여 있어 참고치일 뿐입니다.</li>
+    </ol>
+  </div>
+
+  <div class="card">
     <h2>연간 신규 개점 수 · 2024년</h2>
     <p class="sub">월별 개점 자료는 공시되지 않습니다. 연간 합계로 대신합니다.</p>
     <div class="chartbox" id="chNew"></div>
@@ -245,6 +271,13 @@ var B = [
     risk:'재료비율이 37%로 메가·컴포즈(30% 전후)보다 높습니다. 급성장 구간이라 폐업률이 낮게 찍히는 분모 효과가 있어 아직 검증 구간에 들어가지 않았습니다.' }
 ];
 
+/* 양도율(%) = 연간 명의변경 건수 ÷ 가맹점 수.
+   확인된 브랜드만 넣습니다. 정보공개서 제3장에서 값을 찾으면 여기에 추가하세요. */
+var TRANSFER = { ten: 10.9 };
+B.forEach(function(b){
+  b.transfer = (TRANSFER[b.k] === undefined) ? null : TRANSFER[b.k];
+});
+
 var on = {}; B.forEach(function(b){ on[b.k] = true; });
 
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){
@@ -347,13 +380,14 @@ function overview(){
 }
 
 function tables(){
-  var head=['브랜드','가맹점','신규개점','폐업률','월매출','창업비','평수','평당인테리어'];
+  var head=['브랜드','가맹점','신규개점','폐업률','양도율','월매출','창업비','평수','평당인테리어'];
   document.getElementById('tblMain').innerHTML=
     '<thead><tr>'+head.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead><tbody>'+
     B.map(function(b){
       function c(v){return v===null||v===undefined?'<td class="na">—</td>':'<td>'+fmt(v)+'</td>';}
       return '<tr><td>'+esc(b.name)+'</td>'+c(b.stores[3])+c(b.newOpen)+
         (b.closeRate===null?'<td class="na">—</td>':'<td>'+b.closeRate+'%</td>')+
+        (b.transfer===null?'<td class="na">—</td>':'<td>'+b.transfer+'%</td>')+
         c(b.sales)+c(b.cost)+c(b.size)+c(b.perPy)+'</tr>';
     }).join('')+'</tbody>';
 
@@ -368,7 +402,8 @@ function tables(){
 
 function drawAll(){
   lineChart(document.getElementById('chStores'));
-  ['chSales:sales','chSize:size','chPerPy:perPy','chCost:cost','chNew:newOpen','chPay:pay'].forEach(function(p){
+  ['chSales:sales','chSize:size','chPerPy:perPy','chCost:cost',
+   'chClose:closeRate','chTransfer:transfer','chNew:newOpen','chPay:pay'].forEach(function(p){
     var a=p.split(':'); barChart(a[0],a[1]);
   });
 }
