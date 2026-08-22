@@ -204,6 +204,9 @@ button.btn:focus-visible,.del:focus-visible{outline:2px solid var(--ink);outline
 .notes li{margin-bottom:6px}
 .notes li strong{color:var(--ink)}
 .empty{padding:36px 16px;text-align:center;color:var(--muted);font-size:14px}
+.sync{display:inline-block;margin-bottom:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px;background:#fff}
+.sync.on{color:#3A6B4A;border-color:#BBD3C2}
+.sync.err{color:var(--alert);border-color:#E7C6C0}
 .io{display:none}
 footer{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -215,7 +218,8 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
 <header>
   <p class="eyebrow">견적서 대조</p>
   <h1>커피 장비 본사 공급가 감사</h1>
-  <p class="lede"><a href="index.html" style="color:var(--ink);font-weight:600;text-decoration:none;border-bottom:2px solid var(--line)">← 비교 보드</a></p>
+  <p class="lede"><span id="syncBadge" class="sync">로컬 저장</span>
+  <a href="index.html" style="color:var(--ink);font-weight:600;text-decoration:none;border-bottom:2px solid var(--line)">← 비교 보드</a></p>
   <p class="lede">장비 항목별로 본사 공급가와 같은 사양의 시중가를 나란히 넣으면, 차액이 어디에 숨어 있는지 한 줄로 드러납니다. 금액 단위는 만원입니다.</p>
 </header>
 
@@ -399,12 +403,12 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
     if(f === 'n' || f === 'c'){
       r[f] = t.value;
       if(f === 'c') render();
-      return;
+      pushSave(); return;
     }
     var raw = t.value.trim();
     if(f === 'q'){ r.q = raw === '' ? 0 : Math.max(0, parseFloat(raw)||0); }
     else { r[f] = raw === '' ? null : Math.max(0, parseFloat(raw)||0); }
-    render();
+    render(); pushSave();
   }
 
   tbody.addEventListener('input', onEdit);
@@ -413,26 +417,26 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
     var d = e.target.getAttribute('data-del');
     if(d === null) return;
     rows.splice(+d, 1);
-    render();
+    render(); pushSave();
   });
-  document.getElementById('profit').addEventListener('input', render);
+  document.getElementById('profit').addEventListener('input', function(){ render(); pushSave(); });
 
   document.getElementById('addBtn').addEventListener('click', function(){
     rows.push(blank());
-    render();
+    render(); pushSave();
     var ins = tbody.querySelectorAll('.name-in');
     if(ins.length) ins[ins.length-1].focus();
   });
 
   document.getElementById('presetBtn').addEventListener('click', function(){
     PRESET.forEach(function(p){ rows.push({n:p.n, c:p.c, q:p.q, s:null, m:null}); });
-    render();
+    render(); pushSave();
   });
 
   document.getElementById('clearBtn').addEventListener('click', function(){
     if(rows.length && !confirm('모든 항목을 지웁니다. 계속할까요?')) return;
     rows = [];
-    render();
+    render(); pushSave();
   });
 
   document.getElementById('saveBtn').addEventListener('click', function(){
@@ -465,7 +469,7 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
           };
         });
         if(d.profit) document.getElementById('profit').value = d.profit;
-        render();
+        render(); pushSave();
       }catch(err){
         alert('이 파일은 읽을 수 없습니다. 이 페이지에서 저장한 JSON 파일을 선택하세요.');
       }
@@ -474,7 +478,38 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
     fr.readAsText(f);
   });
 
-  render();
+  /* ── 서버 저장 (index.html 과 같은 값으로 맞추세요) ── */
+  var API   = '';
+  var TOKEN = '';
+  var badge = document.getElementById('syncBadge');
+  function setBadge(t,c){ badge.textContent=t; badge.className='sync'+(c?' '+c:''); }
+  var timer;
+  function pushSave(){
+    if(!API || !TOKEN) return;
+    clearTimeout(timer);
+    setBadge('저장 중…');
+    timer = setTimeout(function(){
+      fetch(API.replace(/\/+$/,'')+'/equipment', {
+        method:'PUT',
+        headers:{'content-type':'application/json','x-token':TOKEN},
+        body: JSON.stringify({v:1, profit:document.getElementById('profit').value, rows:rows})
+      }).then(function(r){ setBadge(r.ok?'저장됨 '+new Date().toTimeString().slice(0,5):'저장 실패', r.ok?'on':'err'); })
+        .catch(function(){ setBadge('연결 실패','err'); });
+    }, 900);
+  }
+  function pull(){
+    if(!API){ setBadge('로컬 저장'); return; }
+    fetch(API.replace(/\/+$/,'')+'/equipment').then(function(r){ return r.ok?r.json():null; })
+      .then(function(d){
+        if(d && Array.isArray(d.rows)){
+          rows = d.rows;
+          if(d.profit) document.getElementById('profit').value = d.profit;
+          render(); setBadge('불러옴','on');
+        } else setBadge('저장된 기록 없음');
+      }).catch(function(){ setBadge('연결 실패','err'); });
+  }
+
+  render(); pull();
 })();
 </script>
 </body>

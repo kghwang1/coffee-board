@@ -84,6 +84,10 @@ td.qcell input:focus{outline:none;border-color:var(--ink);background:#fff}
 .delta.up{color:var(--warn)}
 .delta.dn{color:#3A6B4A}
 .delta.flat{color:var(--muted)}
+.sync{display:inline-block;margin-left:12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px;background:#fff;vertical-align:middle}
+.sync.on{color:#3A6B4A;border-color:#BBD3C2}
+.sync.busy{color:var(--muted)}
+.sync.err{color:var(--warn);border-color:#E7C6C0}
 .logempty{font-size:13.5px;color:var(--muted);padding:14px 0 0;margin:0}
 .del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:17px;line-height:1;padding:2px 6px;border-radius:3px}
 .del:hover{color:var(--warn)}
@@ -99,6 +103,7 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   <p class="eyebrow">공정위 정보공개서 기반</p>
   <h1>저가커피 프랜차이즈 비교 보드</h1>
   <a class="toollink" href="map.html">매장 밀도 지도 →</a>
+  <span id="syncBadge" class="sync">로컬 저장</span>
 </header>
 
 <nav role="tablist">
@@ -588,7 +593,7 @@ document.getElementById('logAdd').addEventListener('click', function(){
   var ex = LOG[k].filter(function(e){return e.d===d;})[0];
   if(ex) ex.c = c; else LOG[k].push({d:d, c:c});
   document.getElementById('logCount').value='';
-  logRender();
+  logRender(); saveLog();
 });
 
 document.getElementById('tblLog').addEventListener('click', function(e){
@@ -597,7 +602,7 @@ document.getElementById('tblLog').addEventListener('click', function(e){
   var sorted = (LOG[k]||[]).slice().sort(function(a,b){return a.d<b.d?-1:1;});
   var target = sorted[+i];
   LOG[k] = LOG[k].filter(function(x){ return x.d !== target.d; });
-  logRender();
+  logRender(); saveLog();
 });
 
 document.getElementById('logSave').addEventListener('click', function(){
@@ -617,7 +622,7 @@ logFile.addEventListener('change',function(){
     try{
       var d=JSON.parse(fr.result);
       if(!d || typeof d.log!=='object') throw 0;
-      LOG=d.log; logRender();
+      LOG=d.log; logRender(); saveLog();
     }catch(err){ alert('이 파일은 읽을 수 없습니다. 이 화면에서 저장한 JSON을 선택하세요.'); }
     logFile.value='';
   };
@@ -672,7 +677,7 @@ document.getElementById('tblQ').addEventListener('change', function(e){
   QDATA[k] = QDATA[k] || {};
   if(raw==='') delete QDATA[k][q];
   else QDATA[k][q] = Math.max(0, parseFloat(raw)||0);
-  qRender();
+  qRender(); saveQ();
 });
 
 document.getElementById('qAdd').addEventListener('click', function(){
@@ -682,7 +687,7 @@ document.getElementById('qAdd').addEventListener('click', function(){
   QTRS.push(v);
   QTRS.sort();
   document.getElementById('qName').value='';
-  qRender();
+  qRender(); saveQ();
 });
 
 document.getElementById('qSave').addEventListener('click', function(){
@@ -702,7 +707,7 @@ qFile.addEventListener('change', function(){
     try{
       var d = JSON.parse(fr.result);
       if(!d || !Array.isArray(d.qtrs) || typeof d.data!=='object') throw 0;
-      QTRS = d.qtrs; QDATA = d.data; qRender();
+      QTRS = d.qtrs; QDATA = d.data; qRender(); saveQ();
     }catch(err){ alert('이 화면에서 저장한 JSON을 선택해 주세요.'); }
     qFile.value='';
   };
@@ -740,7 +745,50 @@ function monthTable(){
   el.innerHTML = head+'<tbody>'+body+'</tbody>';
 }
 
-overview(); legend(); tables(); drawAll(); logRender(); qRender();
+/* ── 서버 저장 (Cloudflare Worker + KV) ────────────────
+   배포 후 아래 두 줄만 본인 값으로 바꾸면 자동 저장이 켜집니다.
+   API 를 빈 문자열로 두면 파일 저장·불러오기만 동작합니다. */
+var API   = '';   /* 예: 'https://coffee-board.kghwang1.workers.dev' */
+var TOKEN = '';   /* Worker 의 WRITE_TOKEN 과 같은 값 */
+
+var badge = document.getElementById('syncBadge');
+function setBadge(txt, cls){ badge.textContent = txt; badge.className = 'sync' + (cls?' '+cls:''); }
+
+var timers = {};
+function pushSave(key, payload){
+  if(!API || !TOKEN) return;
+  clearTimeout(timers[key]);
+  setBadge('저장 중…', 'busy');
+  timers[key] = setTimeout(function(){
+    fetch(API.replace(/\/+$/,'') + '/' + key, {
+      method:'PUT',
+      headers:{'content-type':'application/json','x-token':TOKEN},
+      body: JSON.stringify(payload)
+    }).then(function(r){
+      setBadge(r.ok ? '저장됨 ' + new Date().toTimeString().slice(0,5) : '저장 실패', r.ok ? 'on' : 'err');
+    }).catch(function(){ setBadge('연결 실패', 'err'); });
+  }, 900);
+}
+
+function saveLog(){ pushSave('log', {v:1, log:LOG}); }
+function saveQ(){ pushSave('quarters', {v:1, qtrs:QTRS, data:QDATA}); }
+
+function pullAll(){
+  if(!API){ setBadge('로컬 저장'); return; }
+  setBadge('불러오는 중…', 'busy');
+  var base = API.replace(/\/+$/,'');
+  Promise.all([
+    fetch(base+'/log').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    fetch(base+'/quarters').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ]).then(function(res){
+    var ok = false;
+    if(res[0] && typeof res[0].log === 'object' && res[0].log){ LOG = res[0].log; logRender(); ok = true; }
+    if(res[1] && Array.isArray(res[1].qtrs)){ QTRS = res[1].qtrs; QDATA = res[1].data || {}; qRender(); ok = true; }
+    setBadge(ok ? '불러옴' : '저장된 기록 없음', ok ? 'on' : '');
+  }).catch(function(){ setBadge('연결 실패', 'err'); });
+}
+
+overview(); legend(); tables(); drawAll(); logRender(); qRender(); pullAll();
 })();
 </script>
 </body>
