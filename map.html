@@ -115,7 +115,7 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:22px;fon
     <button class="btn" id="exportBtn" disabled>stores.json 내려받기</button>
     <input type="file" id="convIn" accept=".csv,text/csv" style="display:none">
   </div>
-  <p class="hint" id="convMsg">data.go.kr에서 <b>소상공인시장진흥공단_상가(상권)정보</b>를 검색해 전남 CSV를 받으세요. 로그인 없이 받을 수 있습니다. 파일이 커서 PC에서 하시는 편이 안전합니다.</p>
+  <p class="hint" id="convMsg">data.go.kr에서 <b>소상공인시장진흥공단_상가(상권)정보</b>를 검색해 전남 CSV를 받으세요. 로그인 없이 받을 수 있습니다. 100MB가 넘어도 나눠 읽으므로 그대로 넣으시면 됩니다.</p>
   <table id="convTbl"></table>
 </div>
 
@@ -456,31 +456,78 @@ var convIn = document.getElementById('convIn');
 document.getElementById('convBtn').addEventListener('click', function(){ convIn.click(); });
 convIn.addEventListener('change', function(){
   var f = convIn.files[0]; if(!f) return;
-  document.getElementById('convMsg').textContent = '읽는 중입니다. 파일이 크면 시간이 걸립니다…';
-  var fr = new FileReader();
-  fr.onload = function(){
-    try{
-      var list = convert(String(fr.result));
-      if(!list.length) throw new Error('none');
-      stores = list; on = {};
-      renderChips(); draw(); convSummary(list);
-      document.getElementById('exportBtn').disabled = false;
-      document.getElementById('convMsg').textContent =
-        '매장 '+list.length+'곳을 찾았습니다. 아래 stores.json을 받아 index.html과 같은 폴더에 올리면 다음부터 자동으로 열립니다.';
-      var g = L.featureGroup(list.map(function(s){ return L.marker([s.lat,s.lng]); }));
-      map.fitBounds(g.getBounds().pad(0.1));
-    }catch(err){
-      document.getElementById('convMsg').textContent =
-        (err.message==='none')
-          ? '해당 지역에서 저가커피 브랜드를 찾지 못했습니다. 전남 지역 파일이 맞는지 확인해 주세요.'
-          : '읽을 수 없는 파일입니다. 상호명·시군구명·위도·경도 항목이 있는 원본 CSV를 넣어 주세요.';
+  var msg = document.getElementById('convMsg');
+  var CH = 4 * 1024 * 1024;           /* 4MB씩 나눠 읽습니다 */
+  var pos = 0, tail = '', head = null, idx = null, list = [], seen = {}, bad = false;
+  var dec = new TextDecoder('utf-8');
+
+  function handleLine(l){
+    if(!l) return;
+    if(head === null){
+      head = splitCSVLine(l).map(function(h){ return h.replace(/"/g,'').trim(); });
+      function col(){
+        for(var a=0;a<arguments.length;a++){ var i=head.indexOf(arguments[a]); if(i>=0) return i; }
+        return -1;
+      }
+      idx = {n:col('상호명'), b:col('지점명'), g:col('시군구명'),
+             la:col('위도'), lo:col('경도')};
+      if(idx.n<0 || idx.la<0 || idx.lo<0) bad = true;
+      return;
     }
-    convIn.value='';
-  };
-  fr.onerror = function(){
-    document.getElementById('convMsg').textContent = '파일을 읽지 못했습니다. 용량이 크면 PC에서 시도해 보세요.';
-  };
-  fr.readAsText(f, 'utf-8');
+    var p = splitCSVLine(l);
+    if(idx.g>=0 && TARGET_GU.indexOf((p[idx.g]||'').replace(/"/g,'').trim())<0) return;
+    var nm = (p[idx.n]||'').replace(/"/g,'').trim();
+    if(!nm) return;
+    var hit = null;
+    for(var k=0;k<BRAND_RULES.length;k++){
+      if(BRAND_RULES[k].re.test(nm)){ hit = BRAND_RULES[k].name; break; }
+    }
+    if(!hit) return;
+    var la = parseFloat(p[idx.la]), lo = parseFloat(p[idx.lo]);
+    if(!isFinite(la)||!isFinite(lo)) return;
+    var key = hit+'|'+la.toFixed(5)+'|'+lo.toFixed(5);
+    if(seen[key]) return;
+    seen[key] = 1;
+    var branch = idx.b>=0 ? (p[idx.b]||'').replace(/"/g,'').trim() : '';
+    list.push({brand:hit, name:(branch||nm), lat:la, lng:lo,
+               gu: idx.g>=0 ? (p[idx.g]||'').replace(/"/g,'').trim() : ''});
+  }
+
+  function step(){
+    if(bad){ msg.textContent='상호명·시군구명·위도·경도 항목을 찾지 못했습니다. 원본 CSV가 맞는지 확인해 주세요.'; return; }
+    if(pos >= f.size){ finish(); return; }
+    var fr = new FileReader();
+    var end = Math.min(pos + CH, f.size);
+    fr.onload = function(){
+      var txt = tail + dec.decode(new Uint8Array(fr.result), {stream: end < f.size});
+      var lines = txt.split(/\r?\n/);
+      tail = lines.pop();
+      for(var i=0;i<lines.length;i++) handleLine(lines[i]);
+      pos = end;
+      msg.textContent = '읽는 중… ' + Math.round(pos / f.size * 100) + '%  (지금까지 ' + list.length + '곳)';
+      setTimeout(step, 0);
+    };
+    fr.onerror = function(){ msg.textContent = '파일을 읽지 못했습니다.'; };
+    fr.readAsArrayBuffer(f.slice(pos, end));
+  }
+
+  function finish(){
+    handleLine(tail);
+    if(!list.length){
+      msg.textContent = '해당 지역에서 저가커피 브랜드를 찾지 못했습니다. 전남 지역 파일이 맞는지 확인해 주세요.';
+      return;
+    }
+    stores = list; on = {};
+    renderChips(); draw(); convSummary(list);
+    document.getElementById('exportBtn').disabled = false;
+    msg.textContent = '매장 ' + list.length + '곳을 찾았습니다. stores.json을 받아 같은 폴더에 올리면 다음부터 자동으로 열립니다.';
+    var g = L.featureGroup(list.map(function(s){ return L.marker([s.lat,s.lng]); }));
+    map.fitBounds(g.getBounds().pad(0.1));
+  }
+
+  msg.textContent = '읽는 중… 0%';
+  convIn.value = '';
+  step();
 });
 
 document.getElementById('exportBtn').addEventListener('click', function(){
