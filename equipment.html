@@ -204,6 +204,7 @@ button.btn:focus-visible,.del:focus-visible{outline:2px solid var(--ink);outline
 .notes li{margin-bottom:6px}
 .notes li strong{color:var(--ink)}
 .empty{padding:36px 16px;text-align:center;color:var(--muted);font-size:14px}
+.syncbtns{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
 .sync{display:inline-block;margin-bottom:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:2px 9px;background:#fff}
 .sync.on{color:#3A6B4A;border-color:#BBD3C2}
 .sync.err{color:var(--alert);border-color:#E7C6C0}
@@ -219,6 +220,10 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
   <p class="eyebrow">견적서 대조</p>
   <h1>커피 장비 본사 공급가 감사</h1>
   <p class="lede"><span id="syncBadge" class="sync">로컬 저장</span>
+  <span class="syncbtns">
+    <button class="btn solid" id="saveNow">서버에 저장</button>
+    <button class="btn" id="reloadNow">서버에서 불러오기</button>
+  </span>
   <a href="index.html" style="color:var(--ink);font-weight:600;text-decoration:none;border-bottom:2px solid var(--line)">← 비교 보드</a></p>
   <p class="lede">장비 항목별로 본사 공급가와 같은 사양의 시중가를 나란히 넣으면, 차액이 어디에 숨어 있는지 한 줄로 드러납니다. 금액 단위는 만원입니다.</p>
 </header>
@@ -480,7 +485,7 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
 
   /* ── 서버 저장 (index.html 과 같은 값으로 맞추세요) ── */
   var API   = 'https://coffee-board.kghwang1.workers.dev';
-  var TOKEN = 'kg2026coffeeboard7x4m';   /* ← 여기에 WRITE_TOKEN 값을 따옴표 안에 넣으세요 */
+  var TOKEN = '';   /* ← 여기에 WRITE_TOKEN 값을 따옴표 안에 넣으세요 */
   var badge = document.getElementById('syncBadge');
   function setBadge(t,c){ badge.textContent=t; badge.className='sync'+(c?' '+c:''); }
   var timer;
@@ -497,6 +502,25 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);text-align:center}
         .catch(function(){ setBadge('연결 실패','err'); });
     }, 900);
   }
+  document.getElementById('saveNow').addEventListener('click', function(){
+    if(!API){ setBadge('서버 미설정','err'); return; }
+    if(!TOKEN){ setBadge('토큰 미설정 — 저장 안 됨','err'); return; }
+    clearTimeout(timer);
+    setBadge('저장 중…');
+    fetch(API.replace(/\/+$/,'')+'/equipment', {
+      method:'PUT',
+      headers:{'content-type':'application/json','x-token':TOKEN},
+      body: JSON.stringify({v:1, profit:document.getElementById('profit').value, rows:rows})
+    }).then(function(r){
+      setBadge(r.ok ? '저장됨 '+new Date().toTimeString().slice(0,5) : '저장 실패 ('+r.status+')', r.ok?'on':'err');
+    }).catch(function(){ setBadge('연결 실패','err'); });
+  });
+
+  document.getElementById('reloadNow').addEventListener('click', function(){
+    if(!confirm('서버에 저장된 내용으로 되돌립니다. 화면에서 고친 내용은 사라집니다. 계속할까요?')) return;
+    pull();
+  });
+
   function pull(){
     if(!API){ setBadge('로컬 저장'); return; }
     fetch(API.replace(/\/+$/,'')+'/equipment').then(function(r){ return r.ok?r.json():null; })
