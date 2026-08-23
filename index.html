@@ -77,7 +77,10 @@ button.btn:hover{border-color:var(--ink)}
 button.btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
 button.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 td.qcell{padding:4px 6px}
-td.qcell input{width:74px;text-align:right;font-family:var(--mono);font-size:13px;border:1px solid transparent;border-radius:3px;padding:4px 5px;background:transparent;color:var(--ink)}
+td.qcell{white-space:nowrap}
+.paren{font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:2px}
+.paren input{width:56px;color:var(--muted);font-size:12px}
+td.qcell input{width:64px;text-align:right;font-family:var(--mono);font-size:13px;border:1px solid transparent;border-radius:3px;padding:4px 5px;background:transparent;color:var(--ink)}
 td.qcell input:hover{border-color:var(--line)}
 td.qcell input:focus{outline:none;border-color:var(--ink);background:#fff}
 .delta{display:block;font-family:var(--mono);font-size:10.5px;line-height:1.2;margin-top:1px}
@@ -221,12 +224,9 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
       <button class="btn" id="qAdd">분기 추가</button>
       <button class="btn" id="qSeed">지역 기본값 넣기</button>
       <button class="btn solid" id="qPush">서버에 저장</button>
-      <button class="btn" id="qSave">파일로 저장</button>
-      <button class="btn" id="qLoad">불러오기</button>
-      <input type="file" id="qFile" accept="application/json" style="display:none">
     </div>
     <div class="scroller"><table id="tblQ"></table></div>
-    <p class="src">증감은 직전 분기와의 차이입니다 · 빈칸은 아직 세지 않은 분기</p>
+    <p class="src">앞 숫자는 순천·광양·여수 합계, 괄호 안은 전남광주 권역 전체 · 증감은 직전 분기와의 차이</p>
   </div>
 
   <div class="gapnote">
@@ -339,7 +339,7 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
 </section>
 
 
-<footer>build 0823d · 확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
+<footer>build 0823f · 확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
 </div>
 
 <script>
@@ -674,6 +674,17 @@ function cloneSeed(){
 }
 var QDATA = cloneSeed();
 
+/* 괄호 안 숫자 = 전남광주 권역 전체 (같은 상가정보 파일에서 센 값) */
+var RSEED = {
+  mega:{'2026-2':304}, compose:{'2026-2':272}, venti:{'2026-2':143},
+  ten:{'2026-2':131},  paik:{'2026-2':88},     hio:{'2026-2':43},
+  mammoth:{'2026-2':18}, hasam:{'2026-2':14},  wooji:{'2026-2':6}
+};
+function cloneR(){
+  var o={}; for(var k in RSEED){ o[k]={}; for(var q in RSEED[k]) o[k][q]=RSEED[k][q]; } return o;
+}
+var QREG = cloneR();
+
 function qRender(){
   var head = '<thead><tr><th>브랜드</th>'+QTRS.map(function(q){
     return '<th>'+esc(q)+'</th>';
@@ -690,8 +701,13 @@ function qRender(){
           d = '<span class="delta '+cls+'">'+(g>0?'+':'')+fmt(g)+'</span>';
         }
       }
-      return '<td class="qcell"><input type="number" step="1" min="0" data-k="'+b.k+'" data-q="'+esc(q)+'" value="'+
-             (v===undefined||v===null?'':v)+'" placeholder="—">'+d+'</td>';
+      var rv = (QREG[b.k]||{})[q];
+      return '<td class="qcell">'+
+        '<input type="number" step="1" min="0" data-k="'+b.k+'" data-q="'+esc(q)+'" data-f="a" value="'+
+          (v===undefined||v===null?'':v)+'" placeholder="—">'+
+        '<span class="paren">(<input type="number" step="1" min="0" data-k="'+b.k+'" data-q="'+esc(q)+'" data-f="b" value="'+
+          (rv===undefined||rv===null?'':rv)+'" placeholder="—">)</span>'+
+        d+'</td>';
     }).join('');
     return '<tr><td>'+esc(b.name)+'</td>'+cells+'</tr>';
   }).join('');
@@ -703,10 +719,12 @@ function qEdit(e, redraw){
   if(!t.getAttribute) return;
   var k = t.getAttribute('data-k'); if(!k) return;
   var q = t.getAttribute('data-q');
+  var fld = t.getAttribute('data-f') || 'a';
   var raw = t.value.trim();
-  QDATA[k] = QDATA[k] || {};
-  if(raw==='') delete QDATA[k][q];
-  else QDATA[k][q] = Math.max(0, parseFloat(raw)||0);
+  var store = (fld === 'b') ? QREG : QDATA;
+  store[k] = store[k] || {};
+  if(raw==='') delete store[k][q];
+  else store[k][q] = Math.max(0, parseFloat(raw)||0);
   dirty = true;
   saveQ();                 /* 타이핑 즉시 저장 예약 */
   if(redraw) qRender();    /* 증감 표시는 입력을 마친 뒤 갱신 */
@@ -726,10 +744,14 @@ document.getElementById('qAdd').addEventListener('click', function(){
 
 document.getElementById('qSeed').addEventListener('click', function(){
   if(!confirm('2026년 2분기 열을 순천·여수·광양 실측값으로 채웁니다. 계속할까요?')) return;
-  var seed = cloneSeed();
+  var seed = cloneSeed(), rseed = cloneR();
   for(var k in seed){
     QDATA[k] = QDATA[k] || {};
     for(var q in seed[k]) QDATA[k][q] = seed[k][q];
+  }
+  for(var k2 in rseed){
+    QREG[k2] = QREG[k2] || {};
+    for(var q2 in rseed[k2]) QREG[k2][q2] = rseed[k2][q2];
   }
   if(QTRS.indexOf('2026-2') < 0){ QTRS.push('2026-2'); QTRS.sort(); }
   dirty = true;
@@ -737,7 +759,7 @@ document.getElementById('qSeed').addEventListener('click', function(){
   if(!API || !TOKEN){ setBadge(API ? '토큰 미설정 — 저장 안 됨' : '로컬 저장', API ? 'err' : ''); return; }
   clearTimeout(timers.quarters); timers.quarters = null;
   setBadge('저장 중…', 'busy');
-  putNow('quarters', {v:1, qtrs:QTRS, data:QDATA}).then(function(r){
+  putNow('quarters', {v:2, qtrs:QTRS, data:QDATA, region:QREG}).then(function(r){
     return r.text().then(function(t){ return {ok:r.ok, st:r.status, body:t}; });
   }).then(function(x){
     if(x.ok){
@@ -753,30 +775,6 @@ document.getElementById('qSeed').addEventListener('click', function(){
     alert('서버에 연결하지 못했습니다.\n\n' + e +
           '\n\ncoffee-board.js 의 ORIGIN 이 https://kghwang1.github.io 인지 확인하세요.');
   });
-});
-
-document.getElementById('qSave').addEventListener('click', function(){
-  var blob = new Blob([JSON.stringify({v:1, qtrs:QTRS, data:QDATA}, null, 1)], {type:'application/json'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'quarters-'+new Date().toISOString().slice(0,10)+'.json';
-  a.click(); URL.revokeObjectURL(a.href);
-});
-
-var qFile = document.getElementById('qFile');
-document.getElementById('qLoad').addEventListener('click', function(){ qFile.click(); });
-qFile.addEventListener('change', function(){
-  var f = qFile.files[0]; if(!f) return;
-  var fr = new FileReader();
-  fr.onload = function(){
-    try{
-      var d = JSON.parse(fr.result);
-      if(!d || !Array.isArray(d.qtrs) || typeof d.data!=='object') throw 0;
-      QTRS = d.qtrs; QDATA = d.data; qRender(); saveQ();
-    }catch(err){ alert('이 화면에서 저장한 JSON을 선택해 주세요.'); }
-    qFile.value='';
-  };
-  fr.readAsText(f);
 });
 
 /* ── 월별 개점 수 표 ── */
@@ -814,7 +812,7 @@ function monthTable(){
    배포 후 아래 두 줄만 본인 값으로 바꾸면 자동 저장이 켜집니다.
    API 를 빈 문자열로 두면 파일 저장·불러오기만 동작합니다. */
 var API   = 'https://coffee-board.kghwang1.workers.dev';   /* 예: 'https://coffee-board.kghwang1.workers.dev' */
-var TOKEN = 'kg2026coffeeboard7x4m';   /* ← 여기에 WRITE_TOKEN 값을 따옴표 안에 넣으세요 */
+var TOKEN = '';   /* ← 여기에 WRITE_TOKEN 값을 따옴표 안에 넣으세요 */
 
 var badge = document.getElementById('syncBadge');
 function setBadge(txt, cls){ badge.textContent = txt; badge.className = 'sync' + (cls?' '+cls:''); }
@@ -869,7 +867,7 @@ function saveOne(key, payload){
 }
 
 document.getElementById('qPush').addEventListener('click', function(){
-  saveOne('quarters', {v:1, qtrs:QTRS, data:QDATA});
+  saveOne('quarters', {v:2, qtrs:QTRS, data:QDATA, region:QREG});
 });
 document.getElementById('logPush').addEventListener('click', function(){
   saveOne('log', {v:1, log:LOG});
@@ -882,7 +880,7 @@ document.getElementById('saveNow').addEventListener('click', function(){
   setBadge('저장 중…', 'busy');
   Promise.all([
     putNow('log', {v:1, log:LOG}),
-    putNow('quarters', {v:1, qtrs:QTRS, data:QDATA})
+    putNow('quarters', {v:2, qtrs:QTRS, data:QDATA, region:QREG})
   ]).then(function(rs){
     var bad = rs.filter(function(r){ return !r.ok; })[0];
     setBadge(bad ? '저장 실패 (' + bad.status + ')' : '저장됨 ' + new Date().toTimeString().slice(0,5),
@@ -907,14 +905,14 @@ function flushSaves(){
     if(!timers[key]) continue;
     clearTimeout(timers[key]);
     timers[key] = null;
-    var payload = (key==='log') ? {v:1, log:LOG} : {v:1, qtrs:QTRS, data:QDATA};
+    var payload = (key==='log') ? {v:1, log:LOG} : {v:2, qtrs:QTRS, data:QDATA, region:QREG};
     try{
       var blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
       if(navigator.sendBeacon) navigator.sendBeacon(base+'/'+key+'?t='+encodeURIComponent(TOKEN), blob);
     }catch(e){}
   }
 }
-function saveQ(){ pushSave('quarters', {v:1, qtrs:QTRS, data:QDATA}); }
+function saveQ(){ pushSave('quarters', {v:2, qtrs:QTRS, data:QDATA, region:QREG}); }
 
 function pullAll(force){
   if(!API){ setBadge('로컬 저장'); return; }
@@ -927,7 +925,7 @@ function pullAll(force){
   ]).then(function(res){
     var ok = false;
     if(res[0] && typeof res[0].log === 'object' && res[0].log){ LOG = res[0].log; logRender(); ok = true; }
-    if(res[1] && Array.isArray(res[1].qtrs)){ QTRS = res[1].qtrs; QDATA = res[1].data || {}; qRender(); ok = true; }
+    if(res[1] && Array.isArray(res[1].qtrs)){ QTRS = res[1].qtrs; QDATA = res[1].data || {}; QREG = res[1].region || {}; qRender(); ok = true; }
     else { saveQ(); }
     setBadge(ok ? '불러옴' : '저장된 기록 없음', ok ? 'on' : '');
   }).catch(function(){ setBadge('연결 실패', 'err'); });
