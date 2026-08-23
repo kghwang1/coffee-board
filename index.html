@@ -220,6 +220,7 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
       <input type="text" id="qName" placeholder="2026-3" style="width:110px;font-family:var(--mono)">
       <button class="btn" id="qAdd">분기 추가</button>
       <button class="btn" id="qSeed">지역 기본값 넣기</button>
+      <button class="btn solid" id="qPush">서버에 저장</button>
       <button class="btn" id="qSave">파일로 저장</button>
       <button class="btn" id="qLoad">불러오기</button>
       <input type="file" id="qFile" accept="application/json" style="display:none">
@@ -255,6 +256,7 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
     <p class="logempty" id="logEmpty">기록이 없습니다. 날짜와 누적 호수를 넣어 보세요.</p>
 
     <div class="logbar" style="margin-top:14px">
+      <button class="btn solid" id="logPush">서버에 저장</button>
       <button class="btn" id="logSave">파일로 저장</button>
       <button class="btn" id="logLoad">불러오기</button>
       <input type="file" id="logFile" accept="application/json" style="display:none">
@@ -337,7 +339,7 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
 </section>
 
 
-<footer>확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
+<footer>build 0823d · 확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
 </div>
 
 <script>
@@ -736,8 +738,21 @@ document.getElementById('qSeed').addEventListener('click', function(){
   clearTimeout(timers.quarters); timers.quarters = null;
   setBadge('저장 중…', 'busy');
   putNow('quarters', {v:1, qtrs:QTRS, data:QDATA}).then(function(r){
-    setBadge(r.ok ? '저장됨 ' + new Date().toTimeString().slice(0,5) : '저장 실패 (' + r.status + ')', r.ok ? 'on' : 'err');
-  }).catch(function(){ setBadge('연결 실패', 'err'); });
+    return r.text().then(function(t){ return {ok:r.ok, st:r.status, body:t}; });
+  }).then(function(x){
+    if(x.ok){
+      setBadge('저장됨 ' + new Date().toTimeString().slice(0,5), 'on');
+      alert('서버에 저장되었습니다.\n새로고침해도 값이 남아 있어야 합니다.');
+    } else {
+      setBadge('저장 실패 (' + x.st + ')', 'err');
+      alert('저장 실패\n\nHTTP ' + x.st + '\n' + x.body +
+            '\n\n401 이면 TOKEN 값이 Cloudflare 의 WRITE_TOKEN 과 다릅니다.');
+    }
+  }).catch(function(e){
+    setBadge('연결 실패', 'err');
+    alert('서버에 연결하지 못했습니다.\n\n' + e +
+          '\n\ncoffee-board.js 의 ORIGIN 이 https://kghwang1.github.io 인지 확인하세요.');
+  });
 });
 
 document.getElementById('qSave').addEventListener('click', function(){
@@ -830,6 +845,35 @@ function putNow(key, payload){
     body: JSON.stringify(payload)
   });
 }
+
+function saveOne(key, payload){
+  if(!API){ alert('서버 주소(API)가 비어 있습니다.'); return; }
+  if(!TOKEN){ alert('TOKEN 이 비어 있습니다.\nindex.html 의 var TOKEN 줄에 WRITE_TOKEN 값을 넣어 주세요.'); return; }
+  clearTimeout(timers[key]); timers[key] = null;
+  setBadge('저장 중…', 'busy');
+  putNow(key, payload).then(function(r){
+    return r.text().then(function(t){ return {ok:r.ok, st:r.status, body:t}; });
+  }).then(function(x){
+    if(x.ok){
+      setBadge('저장됨 ' + new Date().toTimeString().slice(0,5), 'on');
+      alert('서버에 저장되었습니다.');
+    } else {
+      setBadge('저장 실패 (' + x.st + ')', 'err');
+      alert('저장 실패\n\nHTTP ' + x.st + '\n' + x.body +
+            '\n\n401 이면 TOKEN 이 Cloudflare 의 WRITE_TOKEN 과 다릅니다.');
+    }
+  }).catch(function(e){
+    setBadge('연결 실패', 'err');
+    alert('서버에 연결하지 못했습니다.\n\n' + e);
+  });
+}
+
+document.getElementById('qPush').addEventListener('click', function(){
+  saveOne('quarters', {v:1, qtrs:QTRS, data:QDATA});
+});
+document.getElementById('logPush').addEventListener('click', function(){
+  saveOne('log', {v:1, log:LOG});
+});
 
 document.getElementById('saveNow').addEventListener('click', function(){
   if(!API){ setBadge('서버 미설정', 'err'); return; }
