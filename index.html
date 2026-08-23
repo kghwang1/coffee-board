@@ -78,12 +78,12 @@ button.btn.solid{background:var(--ink);color:#fff;border-color:var(--ink)}
 button.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 td.qcell{padding:4px 6px}
 td.qcell{white-space:nowrap}
-.paren{font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:2px}
-.paren input{width:56px;color:var(--muted);font-size:12px}
+.slash{font-family:var(--mono);font-size:12px;color:var(--muted);margin:0 1px}
+td.qcell input.reg{width:58px;color:var(--muted)}
 td.qcell input{width:64px;text-align:right;font-family:var(--mono);font-size:13px;border:1px solid transparent;border-radius:3px;padding:4px 5px;background:transparent;color:var(--ink)}
 td.qcell input:hover{border-color:var(--line)}
 td.qcell input:focus{outline:none;border-color:var(--ink);background:#fff}
-.delta{display:block;font-family:var(--mono);font-size:10.5px;line-height:1.2;margin-top:1px}
+.delta{font-family:var(--mono);font-size:11.5px;margin-left:2px}
 .delta.up{color:var(--warn)}
 .delta.dn{color:#3A6B4A}
 .delta.flat{color:var(--muted)}
@@ -217,16 +217,10 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
   </div>
 
   <div class="card">
-    <h2>브랜드별 분기 호수 <span style="font-weight:500;font-size:13px;color:var(--muted)">(순천·여수·광양 자료)</span></h2>
-    <p class="sub">세 도시 합계입니다. 분기마다 상가정보 파일에서 센 매장 수를 적으면 직전 분기 대비 증감이 함께 표시됩니다.</p>
-    <div class="logbar">
-      <input type="text" id="qName" placeholder="2026-3" style="width:110px;font-family:var(--mono)">
-      <button class="btn" id="qAdd">분기 추가</button>
-      <button class="btn" id="qSeed">지역 기본값 넣기</button>
-      <button class="btn solid" id="qPush">서버에 저장</button>
-    </div>
+    <h2>브랜드별 분기 호수 <span style="font-weight:500;font-size:13px;color:var(--muted)">(전남 / 순천·광양·여수)</span></h2>
+    <p class="sub">각 칸은 <b>전남 전체 / 순천·광양·여수(증감)</b> 형식입니다. 증감은 세 도시 기준으로 왼쪽 열과 비교한 값이라 첫 열에는 표시되지 않습니다.</p>
     <div class="scroller"><table id="tblQ"></table></div>
-    <p class="src">앞 숫자는 순천·광양·여수 합계, 괄호 안은 전남광주 권역 전체 · 증감은 직전 분기와의 차이</p>
+    <p class="src">공공데이터포털 상가(상권)정보 · 모두 전남 기준 · 26.06 은 전남광주 통합본에서 광주 5개 자치구를 뺀 값</p>
   </div>
 
   <div class="gapnote">
@@ -339,7 +333,7 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
 </section>
 
 
-<footer>build 0823f · 확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
+<footer>build 0823m · 확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
 </div>
 
 <script>
@@ -661,11 +655,17 @@ document.querySelector('nav').addEventListener('click',function(e){
 });
 
 /* ── 브랜드별 분기 호수 ── */
-var QTRS = ['2026-1','2026-2'];
-var QSEED = {
-  venti:{'2026-2':55}, mega:{'2026-2':52}, compose:{'2026-2':26},
-  hio:{'2026-2':24},   paik:{'2026-2':22}, ten:{'2026-2':9},
-  hasam:{'2026-2':2},  wooji:{'2026-2':2}, mammoth:{'2026-2':1}
+var QTRS = ['24.12','25.03','25.06','25.10','25.12','26.03','26.06'];
+var QSEED = {            /* 순천·광양·여수 합계 */
+  mega:    {'24.12':39,'25.03':43,'25.06':43,'25.10':43,'25.12':45,'26.03':50,'26.06':52},
+  compose: {'24.12':21,'25.03':22,'25.06':23,'25.10':22,'25.12':25,'26.03':27,'26.06':26},
+  paik:    {'24.12':21,'25.03':22,'25.06':22,'25.10':23,'25.12':23,'26.03':23,'26.06':22},
+  venti:   {'24.12':42,'25.03':43,'25.06':46,'25.10':44,'25.12':49,'26.03':52,'26.06':55},
+  ten:     {'24.12':6,'25.03':7,'25.06':7,'25.10':8,'25.12':8,'26.03':9,'26.06':9},
+  mammoth: {'24.12':1,'25.03':1,'25.06':1,'25.10':1,'25.12':1,'26.03':1,'26.06':1},
+  hasam:   {'24.12':2,'25.03':2,'25.06':2,'25.10':2,'25.12':2,'26.03':2,'26.06':2},
+  hio:     {'24.12':17,'25.03':17,'25.06':20,'25.10':19,'25.12':19,'26.03':21,'26.06':24},
+  wooji:   {'24.12':0,'25.03':0,'25.06':0,'25.10':0,'25.12':1,'26.03':1,'26.06':2}
 };
 function cloneSeed(){
   var o = {};
@@ -675,107 +675,54 @@ function cloneSeed(){
 var QDATA = cloneSeed();
 
 /* 괄호 안 숫자 = 전남광주 권역 전체 (같은 상가정보 파일에서 센 값) */
-var RSEED = {
-  mega:{'2026-2':304}, compose:{'2026-2':272}, venti:{'2026-2':143},
-  ten:{'2026-2':131},  paik:{'2026-2':88},     hio:{'2026-2':43},
-  mammoth:{'2026-2':18}, hasam:{'2026-2':14},  wooji:{'2026-2':6}
+var RSEED = {            /* 전남 전체 · 26.06 은 통합본에서 광주 제외 */
+  mega:    {'24.12':103,'25.03':109,'25.06':110,'25.10':110,'25.12':115,'26.03':121,'26.06':126},
+  compose: {'24.12':65,'25.03':71,'25.06':75,'25.10':76,'25.12':79,'26.03':86,'26.06':89},
+  paik:    {'24.12':60,'25.03':65,'25.06':66,'25.10':67,'25.12':67,'26.03':67,'26.06':68},
+  venti:   {'24.12':61,'25.03':61,'25.06':64,'25.10':62,'25.12':69,'26.03':74,'26.06':78},
+  ten:     {'24.12':14,'25.03':17,'25.06':18,'25.10':19,'25.12':22,'26.03':25,'26.06':30},
+  mammoth: {'24.12':7,'25.03':6,'25.06':5,'25.10':5,'25.12':5,'26.03':5,'26.06':5},
+  hasam:   {'24.12':5,'25.03':5,'25.06':6,'25.10':5,'25.12':5,'26.03':7,'26.06':7},
+  hio:     {'24.12':20,'25.03':20,'25.06':24,'25.10':24,'25.12':25,'26.03':27,'26.06':30},
+  wooji:   {'24.12':1,'25.03':1,'25.06':1,'25.10':1,'25.12':2,'26.03':2,'26.06':3}
 };
 function cloneR(){
   var o={}; for(var k in RSEED){ o[k]={}; for(var q in RSEED[k]) o[k][q]=RSEED[k][q]; } return o;
 }
 var QREG = cloneR();
 
+var QORDER = ['mega','compose','venti','paik','hio','ten','hasam','mammoth','wooji'];
+
 function qRender(){
-  var head = '<thead><tr><th>브랜드</th>'+QTRS.map(function(q){
-    return '<th>'+esc(q)+'</th>';
-  }).join('')+'</tr></thead>';
-  var body = B.map(function(b){
-    var cells = QTRS.map(function(q,i){
-      var v = (QDATA[b.k]||{})[q];
+  var head = '<thead><tr><th>브랜드</th>' +
+    QTRS.map(function(q){ return '<th>' + esc(q) + '</th>'; }).join('') + '</tr></thead>';
+
+  var body = QORDER.map(function(key){
+    var b = null;
+    for(var i=0;i<B.length;i++){ if(B[i].k === key) b = B[i]; }
+    if(!b) return '';
+    var cells = QTRS.map(function(q, i){
+      var v  = (QDATA[key]||{})[q];
+      var rv = (QREG[key]||{})[q];
+      if(v === undefined && rv === undefined) return '<td class="na">—</td>';
+      var txt = (rv === undefined ? '—' : fmt(rv)) + '<span class="slash">/</span>' +
+                (v  === undefined ? '—' : fmt(v));
       var d = '';
-      if(i>0 && v!==undefined && v!==null){
-        var pv = (QDATA[b.k]||{})[QTRS[i-1]];
-        if(pv!==undefined && pv!==null){
+      if(i > 0 && v !== undefined){
+        var pv = (QDATA[key]||{})[QTRS[i-1]];
+        if(pv !== undefined){
           var g = v - pv;
-          var cls = g>0?'up':(g<0?'dn':'flat');
-          d = '<span class="delta '+cls+'">'+(g>0?'+':'')+fmt(g)+'</span>';
+          var cls = g > 0 ? 'up' : (g < 0 ? 'dn' : 'flat');
+          d = '<span class="delta ' + cls + '">(' + (g > 0 ? '+' : '') + fmt(g) + ')</span>';
         }
       }
-      var rv = (QREG[b.k]||{})[q];
-      return '<td class="qcell">'+
-        '<input type="number" step="1" min="0" data-k="'+b.k+'" data-q="'+esc(q)+'" data-f="a" value="'+
-          (v===undefined||v===null?'':v)+'" placeholder="—">'+
-        '<span class="paren">(<input type="number" step="1" min="0" data-k="'+b.k+'" data-q="'+esc(q)+'" data-f="b" value="'+
-          (rv===undefined||rv===null?'':rv)+'" placeholder="—">)</span>'+
-        d+'</td>';
+      return '<td>' + txt + d + '</td>';
     }).join('');
-    return '<tr><td>'+esc(b.name)+'</td>'+cells+'</tr>';
+    return '<tr><td>' + esc(b.name) + '</td>' + cells + '</tr>';
   }).join('');
-  document.getElementById('tblQ').innerHTML = head+'<tbody>'+body+'</tbody>';
+
+  document.getElementById('tblQ').innerHTML = head + '<tbody>' + body + '</tbody>';
 }
-
-function qEdit(e, redraw){
-  var t = e.target;
-  if(!t.getAttribute) return;
-  var k = t.getAttribute('data-k'); if(!k) return;
-  var q = t.getAttribute('data-q');
-  var fld = t.getAttribute('data-f') || 'a';
-  var raw = t.value.trim();
-  var store = (fld === 'b') ? QREG : QDATA;
-  store[k] = store[k] || {};
-  if(raw==='') delete store[k][q];
-  else store[k][q] = Math.max(0, parseFloat(raw)||0);
-  dirty = true;
-  saveQ();                 /* 타이핑 즉시 저장 예약 */
-  if(redraw) qRender();    /* 증감 표시는 입력을 마친 뒤 갱신 */
-}
-document.getElementById('tblQ').addEventListener('input',  function(e){ qEdit(e, false); });
-document.getElementById('tblQ').addEventListener('change', function(e){ qEdit(e, true);  });
-
-document.getElementById('qAdd').addEventListener('click', function(){
-  var v = document.getElementById('qName').value.trim();
-  if(!/^\d{4}-[1-4]$/.test(v)){ alert('2026-3 형태로 넣어 주세요.'); return; }
-  if(QTRS.indexOf(v)>=0){ alert('이미 있는 분기입니다.'); return; }
-  QTRS.push(v);
-  QTRS.sort();
-  document.getElementById('qName').value='';
-  qRender(); saveQ();
-});
-
-document.getElementById('qSeed').addEventListener('click', function(){
-  if(!confirm('2026년 2분기 열을 순천·여수·광양 실측값으로 채웁니다. 계속할까요?')) return;
-  var seed = cloneSeed(), rseed = cloneR();
-  for(var k in seed){
-    QDATA[k] = QDATA[k] || {};
-    for(var q in seed[k]) QDATA[k][q] = seed[k][q];
-  }
-  for(var k2 in rseed){
-    QREG[k2] = QREG[k2] || {};
-    for(var q2 in rseed[k2]) QREG[k2][q2] = rseed[k2][q2];
-  }
-  if(QTRS.indexOf('2026-2') < 0){ QTRS.push('2026-2'); QTRS.sort(); }
-  dirty = true;
-  qRender();
-  if(!API || !TOKEN){ setBadge(API ? '토큰 미설정 — 저장 안 됨' : '로컬 저장', API ? 'err' : ''); return; }
-  clearTimeout(timers.quarters); timers.quarters = null;
-  setBadge('저장 중…', 'busy');
-  putNow('quarters', {v:2, qtrs:QTRS, data:QDATA, region:QREG}).then(function(r){
-    return r.text().then(function(t){ return {ok:r.ok, st:r.status, body:t}; });
-  }).then(function(x){
-    if(x.ok){
-      setBadge('저장됨 ' + new Date().toTimeString().slice(0,5), 'on');
-      alert('서버에 저장되었습니다.\n새로고침해도 값이 남아 있어야 합니다.');
-    } else {
-      setBadge('저장 실패 (' + x.st + ')', 'err');
-      alert('저장 실패\n\nHTTP ' + x.st + '\n' + x.body +
-            '\n\n401 이면 TOKEN 값이 Cloudflare 의 WRITE_TOKEN 과 다릅니다.');
-    }
-  }).catch(function(e){
-    setBadge('연결 실패', 'err');
-    alert('서버에 연결하지 못했습니다.\n\n' + e +
-          '\n\ncoffee-board.js 의 ORIGIN 이 https://kghwang1.github.io 인지 확인하세요.');
-  });
-});
 
 /* ── 월별 개점 수 표 ── */
 function monthTable(){
@@ -866,9 +813,6 @@ function saveOne(key, payload){
   });
 }
 
-document.getElementById('qPush').addEventListener('click', function(){
-  saveOne('quarters', {v:2, qtrs:QTRS, data:QDATA, region:QREG});
-});
 document.getElementById('logPush').addEventListener('click', function(){
   saveOne('log', {v:1, log:LOG});
 });
@@ -878,14 +822,7 @@ document.getElementById('saveNow').addEventListener('click', function(){
   if(!TOKEN){ setBadge('토큰 미설정 — 저장 안 됨', 'err'); return; }
   for(var k in timers){ clearTimeout(timers[k]); timers[k] = null; }
   setBadge('저장 중…', 'busy');
-  Promise.all([
-    putNow('log', {v:1, log:LOG}),
-    putNow('quarters', {v:2, qtrs:QTRS, data:QDATA, region:QREG})
-  ]).then(function(rs){
-    var bad = rs.filter(function(r){ return !r.ok; })[0];
-    setBadge(bad ? '저장 실패 (' + bad.status + ')' : '저장됨 ' + new Date().toTimeString().slice(0,5),
-             bad ? 'err' : 'on');
-  }).catch(function(){ setBadge('연결 실패', 'err'); });
+  saveOne('log', {v:1, log:LOG});
 });
 
 document.getElementById('reloadNow').addEventListener('click', function(){
@@ -905,14 +842,14 @@ function flushSaves(){
     if(!timers[key]) continue;
     clearTimeout(timers[key]);
     timers[key] = null;
-    var payload = (key==='log') ? {v:1, log:LOG} : {v:2, qtrs:QTRS, data:QDATA, region:QREG};
+    if(key !== 'log') continue;
+    var payload = {v:1, log:LOG};
     try{
       var blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
       if(navigator.sendBeacon) navigator.sendBeacon(base+'/'+key+'?t='+encodeURIComponent(TOKEN), blob);
     }catch(e){}
   }
 }
-function saveQ(){ pushSave('quarters', {v:2, qtrs:QTRS, data:QDATA, region:QREG}); }
 
 function pullAll(force){
   if(!API){ setBadge('로컬 저장'); return; }
@@ -920,13 +857,10 @@ function pullAll(force){
   setBadge('불러오는 중…', 'busy');
   var base = API.replace(/\/+$/,'');
   Promise.all([
-    fetch(base+'/log').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
-    fetch(base+'/quarters').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+    fetch(base+'/log').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
   ]).then(function(res){
     var ok = false;
     if(res[0] && typeof res[0].log === 'object' && res[0].log){ LOG = res[0].log; logRender(); ok = true; }
-    if(res[1] && Array.isArray(res[1].qtrs)){ QTRS = res[1].qtrs; QDATA = res[1].data || {}; QREG = res[1].region || {}; qRender(); ok = true; }
-    else { saveQ(); }
     setBadge(ok ? '불러옴' : '저장된 기록 없음', ok ? 'on' : '');
   }).catch(function(){ setBadge('연결 실패', 'err'); });
 }
