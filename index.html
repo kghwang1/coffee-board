@@ -220,7 +220,36 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
     <h2>브랜드별 분기 호수 <span style="font-weight:500;font-size:13px;color:var(--muted)">(전남 / 순천·광양·여수)</span></h2>
     <p class="sub">각 칸은 <b>전남 전체 / 순천·광양·여수(증감)</b> 형식입니다. 증감은 세 도시 기준으로 왼쪽 열과 비교한 값이라 첫 열에는 표시되지 않습니다.</p>
     <div class="scroller"><table id="tblQ"></table></div>
-    <p class="src">공공데이터포털 상가(상권)정보 · 모두 전남 기준 · 26.06 은 전남광주 통합본에서 광주 5개 자치구를 뺀 값</p>
+    <div class="srcbox">
+      <div class="srcline"><b>출처</b> 공공데이터포털 · 소상공인시장진흥공단 상가(상권)정보
+        <a href="https://www.data.go.kr/data/15083033/fileData.do" target="_blank" rel="noopener">data.go.kr</a></div>
+      <div class="srcline"><b>사용한 파일</b></div>
+      <ul class="srclist">
+        <li>소상공인시장진흥공단_상가_상권_정보_전남_202412.csv <span>→ 24.12</span></li>
+        <li>소상공인시장진흥공단_상가_상권_정보_전남_202503.csv <span>→ 25.03</span></li>
+        <li>소상공인시장진흥공단_상가_상권_정보_전남_202506.csv <span>→ 25.06</span></li>
+        <li>소상공인시장진흥공단_상가_상권_정보_전남_202510.csv <span>→ 25.10</span></li>
+        <li>소상공인시장진흥공단_상가_상권_정보_전남_202512.csv <span>→ 25.12</span></li>
+        <li>소상공인시장진흥공단_상가_상권_정보_전남_202603.csv <span>→ 26.03</span></li>
+        <li>소상공인시장진흥공단_상가_상권_정보_전남광주_202606.csv <span>→ 26.06 · 광주 5개 자치구 제외</span></li>
+      </ul>
+      <div class="srcline">상호명으로 브랜드를 가려내고 같은 좌표의 중복은 제외했습니다. 각 파일은 해당 시점에 영업 중인 매장의 스냅샷이며, 개점 건수가 아닙니다.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>전남 매장 수 추이</h2>
+    <p class="sub">매머드·하삼동을 뺀 7개 브랜드입니다. 범례를 눌러 켜고 끌 수 있습니다.</p>
+    <div class="chartbox" id="chTrendJn"></div>
+    <div class="legend" id="lgTrend"></div>
+    <p class="src">단위 개 · 전남 전체 · 26.06 은 통합본에서 광주 제외</p>
+  </div>
+
+  <div class="card">
+    <h2>순천·광양·여수 매장 수 추이</h2>
+    <p class="sub">같은 7개 브랜드를 세 도시 합계로만 본 것입니다. 위 범례가 함께 적용됩니다.</p>
+    <div class="chartbox" id="chTrend3"></div>
+    <p class="src">단위 개 · 순천시 · 광양시 · 여수시 합계</p>
   </div>
 
   <div class="gapnote">
@@ -333,7 +362,7 @@ footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;fon
 </section>
 
 
-<footer>build 0823m · 확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
+<footer>build 0823p · 확인되지 않은 값은 빈칸입니다 · 계약 전 franchise.ftc.go.kr에서 원문 확인</footer>
 </div>
 
 <script>
@@ -865,7 +894,78 @@ function pullAll(force){
   }).catch(function(){ setBadge('연결 실패', 'err'); });
 }
 
-overview(); legend(); tables(); drawAll(); logRender(); qRender(); pullAll();
+/* ── 분기 호수 추이 선그래프 ── */
+var TREND = ['mega','compose','venti','paik','hio','ten','wooji'];   /* 매머드·하삼동 제외 */
+var trendOn = {}; TREND.forEach(function(k){ trendOn[k] = true; });
+
+function brandByKey(k){ for(var i=0;i<B.length;i++){ if(B[i].k===k) return B[i]; } return null; }
+
+function trendChart(elId, store){
+  var el = document.getElementById(elId);
+  var W=760, H=330, L=44, R=54, T=16, Bm=32;
+  var keys = TREND.filter(function(k){ return trendOn[k]; });
+  var max = 0;
+  keys.forEach(function(k){
+    QTRS.forEach(function(q){ var v=(store[k]||{})[q]; if(v!==undefined && v>max) max=v; });
+  });
+  max = nice(max || 1);
+  var x = function(i){ return QTRS.length>1 ? L + i*(W-L-R)/(QTRS.length-1) : L; };
+  var y = function(v){ return T + (1 - v/max)*(H-T-Bm); };
+
+  var s = '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="브랜드별 매장 수 추이">';
+  for(var g=0; g<=4; g++){
+    var gv = max*g/4, gy = y(gv);
+    s += '<line x1="'+L+'" y1="'+gy+'" x2="'+(W-R)+'" y2="'+gy+'" stroke="#EBEDEF"/>'+
+         '<text x="'+(L-8)+'" y="'+(gy+4)+'" text-anchor="end" font-size="11" fill="#6E7681">'+fmt(gv)+'</text>';
+  }
+  QTRS.forEach(function(q,i){
+    s += '<text x="'+x(i)+'" y="'+(H-11)+'" text-anchor="middle" font-size="10.5" fill="#6E7681">'+esc(q)+'</text>';
+  });
+
+  keys.forEach(function(k){
+    var b = brandByKey(k); if(!b) return;
+    var pts = [];
+    QTRS.forEach(function(q,i){
+      var v = (store[k]||{})[q];
+      if(v !== undefined) pts.push([x(i), y(v), v]);
+    });
+    if(!pts.length) return;
+    if(pts.length > 1){
+      s += '<polyline fill="none" stroke="'+b.color+'" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" points="'+
+           pts.map(function(p){ return p[0]+','+p[1]; }).join(' ')+'"/>';
+    }
+    pts.forEach(function(p){
+      s += '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3" fill="#fff" stroke="'+b.color+'" stroke-width="2"/>';
+    });
+    var last = pts[pts.length-1];
+    s += '<text x="'+(W-R+6)+'" y="'+(last[1]+4)+'" font-size="11" font-weight="600" fill="'+b.color+'">'+fmt(last[2])+'</text>';
+  });
+  s += '</svg>';
+  el.innerHTML = s;
+}
+
+function trendAll(){
+  trendChart('chTrendJn', QREG);
+  trendChart('chTrend3',  QDATA);
+}
+
+function trendLegend(){
+  document.getElementById('lgTrend').innerHTML = TREND.map(function(k){
+    var b = brandByKey(k); if(!b) return '';
+    return '<button class="lg" data-t="'+k+'" aria-pressed="'+(trendOn[k]?'true':'false')+'">'+
+           '<i style="background:'+b.color+'"></i>'+esc(b.name)+'</button>';
+  }).join('');
+}
+
+document.getElementById('lgTrend').addEventListener('click', function(e){
+  var btn = e.target.closest('.lg'); if(!btn) return;
+  var k = btn.getAttribute('data-t');
+  trendOn[k] = !trendOn[k];
+  btn.setAttribute('aria-pressed', trendOn[k]?'true':'false');
+  trendAll();
+});
+
+overview(); legend(); tables(); drawAll(); logRender(); trendLegend(); trendAll(); qRender(); pullAll();
 })();
 </script>
 </body>
