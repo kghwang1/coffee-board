@@ -611,7 +611,7 @@ document.getElementById('logAdd').addEventListener('click', function(){
   var ex = LOG[k].filter(function(e){return e.d===d;})[0];
   if(ex) ex.c = c; else LOG[k].push({d:d, c:c});
   document.getElementById('logCount').value='';
-  logRender(); saveLog();
+  logRender(); dirty = true; saveLog();
 });
 
 document.getElementById('tblLog').addEventListener('click', function(e){
@@ -705,6 +705,7 @@ function qEdit(e, redraw){
   QDATA[k] = QDATA[k] || {};
   if(raw==='') delete QDATA[k][q];
   else QDATA[k][q] = Math.max(0, parseFloat(raw)||0);
+  dirty = true;
   saveQ();                 /* 타이핑 즉시 저장 예약 */
   if(redraw) qRender();    /* 증감 표시는 입력을 마친 뒤 갱신 */
 }
@@ -729,7 +730,14 @@ document.getElementById('qSeed').addEventListener('click', function(){
     for(var q in seed[k]) QDATA[k][q] = seed[k][q];
   }
   if(QTRS.indexOf('2026-2') < 0){ QTRS.push('2026-2'); QTRS.sort(); }
-  qRender(); saveQ();
+  dirty = true;
+  qRender();
+  if(!API || !TOKEN){ setBadge(API ? '토큰 미설정 — 저장 안 됨' : '로컬 저장', API ? 'err' : ''); return; }
+  clearTimeout(timers.quarters); timers.quarters = null;
+  setBadge('저장 중…', 'busy');
+  putNow('quarters', {v:1, qtrs:QTRS, data:QDATA}).then(function(r){
+    setBadge(r.ok ? '저장됨 ' + new Date().toTimeString().slice(0,5) : '저장 실패 (' + r.status + ')', r.ok ? 'on' : 'err');
+  }).catch(function(){ setBadge('연결 실패', 'err'); });
 });
 
 document.getElementById('qSave').addEventListener('click', function(){
@@ -797,6 +805,7 @@ var badge = document.getElementById('syncBadge');
 function setBadge(txt, cls){ badge.textContent = txt; badge.className = 'sync' + (cls?' '+cls:''); }
 
 var timers = {};
+var dirty = false;   /* 화면에서 값을 고쳤는지 */
 function pushSave(key, payload){
   if(!API){ setBadge('로컬 저장'); return; }
   if(!TOKEN){ setBadge('토큰 미설정 — 저장 안 됨', 'err'); return; }
@@ -839,7 +848,7 @@ document.getElementById('saveNow').addEventListener('click', function(){
 
 document.getElementById('reloadNow').addEventListener('click', function(){
   if(!confirm('서버에 저장된 내용으로 되돌립니다. 화면에서 고친 내용은 사라집니다. 계속할까요?')) return;
-  pullAll();
+  pullAll(true);
 });
 
 function saveLog(){ pushSave('log', {v:1, log:LOG}); }
@@ -863,8 +872,9 @@ function flushSaves(){
 }
 function saveQ(){ pushSave('quarters', {v:1, qtrs:QTRS, data:QDATA}); }
 
-function pullAll(){
+function pullAll(force){
   if(!API){ setBadge('로컬 저장'); return; }
+  if(dirty && !force){ return; }
   setBadge('불러오는 중…', 'busy');
   var base = API.replace(/\/+$/,'');
   Promise.all([
