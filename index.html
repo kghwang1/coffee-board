@@ -98,12 +98,16 @@ td.qcell input:focus{outline:none;border-color:var(--ink);background:#fff}
 footer{font-size:11.5px;color:var(--muted);text-align:center;margin-top:24px;font-family:var(--mono)}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.homebtn{display:inline-flex;align-items:center;gap:4px;margin-bottom:10px;padding:6px 12px;border-radius:99px;border:1px solid currentColor;color:inherit;text-decoration:none;font-size:13px;font-weight:600;opacity:.85}
+.homebtn:hover{opacity:1}
+@media print{.homebtn{display:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
 
 <header>
+  <a class="homebtn" href="https://kghwang1.github.io/oo-recipe/">🏠 홈</a>
   <p class="eyebrow">공정위 정보공개서 기반</p>
   <h1>저가커피 프랜차이즈 비교 보드</h1>
   <a class="toollink" href="map.html">매장 밀도 지도 →</a>
