@@ -44,7 +44,7 @@ button.warn{background:var(--warn);color:#fff}
 .pad button.pri{background:var(--brand);color:#fff;font-size:20px}
 /* 주간표 */
 .gridhead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.grid{display:grid;grid-template-columns:34px repeat(7,1fr);overflow-x:auto;margin-top:8px;min-width:0}
+.grid{display:grid;grid-template-columns:34px repeat(7,minmax(0,1fr));overflow:hidden;margin-top:8px;min-width:0;padding-bottom:8px}
 .gcol{position:relative;border-left:1px solid var(--line)}
 .ghead{text-align:center;font-size:12px;padding:4px 0;border-bottom:1px solid var(--line);height:34px}
 .ghead.today{color:#fff;background:var(--brand);border-radius:8px 8px 0 0}
@@ -290,7 +290,7 @@ async function login(v) {
 function gridSection(admin) {
   return `<div class="card"><div class="gridhead">
     <div class="row" style="flex:0 0 auto;align-items:center"><button class="sm" data-w="-1">◀</button><b id="wk" style="min-width:120px;text-align:center"></b><button class="sm" data-w="1">▶</button></div>
-    <div class="tabs" style="flex:0 0 auto"><button class="sm ${MODE==='plan'?'on':''}" data-m="plan">예정 스케줄</button><button class="sm ${MODE==='real'?'on':''}" data-m="real">실제 출퇴근</button></div></div>
+    <div class="tabs" style="flex:0 0 auto"><button class="sm ${MODE==='plan'?'on':''}" data-m="plan">근무시간표</button><button class="sm ${MODE==='real'?'on':''}" data-m="real">${admin ? "출퇴근 기록" : "나의 근무"}</button></div></div>
     <div id="grid"></div><div class="legend" id="legend"></div>
     ${admin ? `<div class="muted" style="margin-top:6px">스케줄 칸을 누르면 수정/삭제할 수 있습니다.</div>` : ''}</div>`;
 }
@@ -327,7 +327,7 @@ function drawGrid(admin) {
   const mine = ME && ME.role === 'staff' ? ME.id : null;
   const plan = schedules.map(s => ({ ...s, kind: 'plan' }));
   const real = punches.map(p => ({ ...p, kind: 'real', end: p.end || (p.status === 'open' ? Math.max(now, p.start + 20 * MIN) : p.start + 30 * MIN) }));
-  // 예정 스케줄: 모든 사람의 예정 + 실제 / 실제 출퇴근: 직원은 본인 예정 + 본인 실제, 관리자는 전체 실제
+  // 근무시간표: 모든 사람의 예정 + 실제 / 출퇴근 기록: 직원은 본인 예정 + 본인 실제, 관리자는 전체 실제
   const items = MODE === 'plan' ? plan.concat(real)
     : mine ? plan.concat(real).filter(x => x.staff_id === mine) : real;
   const H = (CFG.H1 - CFG.H0) * CFG.PX, y = t => (t - CFG.H0) * CFG.PX;
@@ -560,7 +560,7 @@ async function renderAdmin() {
   const [sf, rq] = await Promise.all([run(() => api('/admin/staff')), run(() => api('/admin/requests'))]);
   STAFF = sf || []; const reqs = rq || [];
   PREWEEK = wk;
-  const tabs = [['tpl', `근무표${TPL_DIRTY ? '*' : ''}`], ['grid', '주간표'], ['punch', '출퇴근 기록'], ['req', `수정요청${reqs.length ? ' ' + reqs.length : ''}`], ['pay', '급여'], ['staff', '직원']];
+  const tabs = [['tpl', `근무표${TPL_DIRTY ? '*' : ''}`], ['grid', '주간표'], ['punch', '근무기록/수정'], ['req', `수정요청${reqs.length ? ' ' + reqs.length : ''}`], ['pay', '급여'], ['staff', '직원']];
   $('#app').innerHTML = `<div class="wrap"><div class="top"><h1>관리자</h1><button class="sm" id="out">로그아웃</button></div>
     <div class="tabs admintabs">${tabs.map(([k, n]) => `<button class="${TAB === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div><div id="body"></div></div>`;
   $('#out').onclick = logout;
@@ -759,13 +759,14 @@ function drawSummary() {
   for (const s of list) {
     const days = tplShifts(s.id);
     const hrs = days.map(r => r.reduce((a, [x, z]) => a + z - x, 0));
-    const paidDay = days.map(r => r.reduce((a, [x, z]) => { const m = (z - x) * 60; return a + m - (m >= 480 ? 60 : m >= 240 ? 30 : 0); }, 0));
+    const ub = s.use_break !== 0;
+    const paidDay = days.map(r => r.reduce((a, [x, z]) => { const m = (z - x) * 60; return a + m - (!ub ? 0 : m >= 480 ? 60 : m >= 240 ? 30 : 0); }, 0));
     const tot = hrs.reduce((a, b) => a + b, 0), paid = paidDay.reduce((a, b) => a + b, 0);
     if (!tot && !s.active) continue;
     const wk = Math.floor(paid * s.wage / 60), mon = Math.floor(paidDay.reduce((a, m, d) => a + m * dayCount[d], 0) * s.wage / 60);
     totPay += wk; totMon += mon; if (tot >= 15) over.push({ name: esc(s.name), tot, paid });
     const bd = days.map((r, d) => r.some(([x, z]) => z - x >= 4) ? TDAYS[d] : '').filter(Boolean);
-    if (bd.length) brk.push(`${esc(s.name)}(${bd.join('·')})`);
+    if (bd.length) brk.push(`${esc(s.name)}(${bd.join('·')})${ub ? '' : ' <span style="color:var(--sub);font-weight:400">휴게 없음·전부 유급</span>'}`);
     rows += `<tr><td><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${s.color}"></i> ${esc(s.name)}</td>
       ${hrs.map(h => `<td>${h || '<span class="muted">-</span>'}</td>`).join('')}
       <td style="text-align:center"><span class="hcirc ${tot >= 15 ? 'over' : ''}">${tot}</span></td><td>${fmtH(paid)}</td>
@@ -858,7 +859,7 @@ async function tabPay() {
   const sum = PAY.staff.reduce((a, s) => a + s.pay, 0);
   const confAt = PAY.staff.map(s => s.confirmedAt).filter(Boolean).sort().pop();
   const unres = PAY.staff.reduce((a, s) => a + s.unresolved, 0);
-  $('#paybody').innerHTML = `<div class="card"><b>${PAY.month} 인건비 합계: ${won(sum)}</b><div class="muted">휴게시간 자동 차감: 4시간 이상 30분, 8시간 이상 1시간</div>
+  $('#paybody').innerHTML = `<div class="card"><b>${PAY.month} 인건비 합계: ${won(sum)}</b><div class="muted">휴게시간 차감(직원 탭에서 "휴게시간 사용"인 사람만): 4시간 이상 30분, 8시간 이상 1시간</div>
       <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         ${confAt ? `<span class="stamp ok">확정됨 ${mdw(confAt)} ${hhmm(confAt)}</span>` : '<span class="stamp wip">확정 전</span>'}
         <span style="flex:1"></span>
@@ -867,7 +868,7 @@ async function tabPay() {
       </div>
       <div class="muted" style="margin-top:6px">확정하면 알바가 자기 PIN으로 로그인해 <b>확정급여</b>에서 본인 명세서만 볼 수 있습니다.</div></div>` +
     PAY.staff.map(s => `<div class="card" style="border-left:5px solid ${s.color}">
-      <div class="row" style="align-items:center"><div><b style="font-size:17px">${esc(s.name)}</b> <span class="muted">시급 ${won(s.wage)}</span>${s.confirmedAt ? ' <span class="badge ok">확정</span>' : ''}</div><button class="sm" data-slip="${s.id}" style="flex:0 0 auto">명세서</button></div>
+      <div class="row" style="align-items:center"><div><b style="font-size:17px">${esc(s.name)}</b> <span class="muted">시급 ${won(s.wage)}</span>${s.useBreak === false ? ' <span class="badge warn">휴게 없음</span>' : ''}${s.confirmedAt ? ' <span class="badge ok">확정</span>' : ''}</div><button class="sm" data-slip="${s.id}" style="flex:0 0 auto">명세서</button></div>
       <table class="pay" style="margin-top:6px"><tr><th>근무일</th><th>총 시간</th><th>휴게</th><th>유급 시간</th><th>급여</th></tr>
       <tr><td>${s.days}일</td><td>${fmtH(s.total)}</td><td>${fmtH(s.brk)}</td><td>${fmtH(s.paid)}</td><td><b>${won(s.pay)}</b></td></tr></table>
       ${s.unresolved ? `<div class="warnlist" style="background:#fde3e3">⚠ 퇴근누락/근무중 기록 ${s.unresolved}건이 계산에서 빠졌습니다. 기록 탭에서 정리하세요.</div>` : ''}
@@ -929,7 +930,7 @@ function showSlip(s, month, label) {
 async function tabStaff() {
   const COLORS = ['#e4572e', '#1d8a4b', '#3a6ea5', '#9c27b0', '#d98200', '#00897b', '#c2185b', '#5d4037'];
   $('#body').innerHTML = `<div class="card"><div class="row" style="align-items:center"><b>직원 목록</b><button class="sm pri" id="nAdd" style="flex:0 0 auto">직원 추가</button></div>
-    <div class="list">${STAFF.map(s => `<div><span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${s.color}"></i> <b>${esc(s.name)}</b> <span class="muted">PIN ${esc(s.pin)} · ${won(s.wage)}</span>${s.active ? '' : '<span class="badge">퇴사</span>'}</span>
+    <div class="list">${STAFF.map(s => `<div><span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${s.color}"></i> <b>${esc(s.name)}</b> <span class="muted">PIN ${esc(s.pin)} · ${won(s.wage)}</span>${s.use_break === 0 ? '<span class="badge warn">휴게 없음</span>' : '<span class="badge">휴게 있음</span>'}${s.active ? '' : '<span class="badge">퇴사</span>'}</span>
       <button class="sm" data-se="${s.id}">수정</button></div>`).join('') || '<div class="muted">등록된 직원이 없습니다.</div>'}</div></div>`;
   const edit = async s => {
     const col = s ? s.color : COLORS[STAFF.length % COLORS.length];
@@ -938,8 +939,10 @@ async function tabStaff() {
       <label>PIN (숫자 4~6자리, 직원마다 다르게)</label><input id="fP" inputmode="numeric" value="${esc(s ? s.pin : '')}">
       <label>시급</label><input id="fW" type="number" value="${s ? s.wage : 10320}">
       <label>색상</label><input id="fC" type="color" value="${col}" style="height:44px">
+      <label><input id="fB" type="checkbox" style="width:auto" ${!s || s.use_break !== 0 ? 'checked' : ''}> 휴게시간 사용</label>
+      <div class="muted" style="font-size:12px;margin:-2px 0 4px 22px">체크: 4시간 이상 근무 시 30분(8시간 이상 1시간)을 빼고 급여 계산<br>체크 해제: 휴게 없이 근무한 시간 전부를 급여로 계산</div>
       <label><input id="fA" type="checkbox" style="width:auto" ${!s || s.active ? 'checked' : ''}> 재직 중</label>`, '저장', () =>
-      ({ id: s ? s.id : null, name: $('#fN').value, pin: $('#fP').value, wage: +$('#fW').value, color: $('#fC').value, active: $('#fA').checked }));
+      ({ id: s ? s.id : null, name: $('#fN').value, pin: $('#fP').value, wage: +$('#fW').value, color: $('#fC').value, active: $('#fA').checked, use_break: $('#fB').checked }));
     if (!v) return;
     if (await run(() => api('/admin/staff', v))) { toast('저장했습니다'); renderAdmin(); }
   };
